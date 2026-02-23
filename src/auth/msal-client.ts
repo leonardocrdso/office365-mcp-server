@@ -60,13 +60,10 @@ class MsalClient {
     if (!this.pca) {
       this.pca = new PublicClientApplication(this.getConfig());
 
-      // Tentar carregar cache do disco
       try {
         const cacheData = await readFile(TOKEN_CACHE_PATH, "utf-8");
         this.pca.getTokenCache().deserialize(cacheData);
-      } catch {
-        // Cache não existe ainda, tudo OK
-      }
+      } catch {}
     }
     return this.pca;
   }
@@ -84,7 +81,6 @@ class MsalClient {
       const request: DeviceCodeRequest = {
         scopes: ALL_SCOPES,
         deviceCodeCallback: (response) => {
-          // Notificar via callback se registrado
           if (this.deviceCodeCallback) {
             this.deviceCodeCallback(response.message);
           }
@@ -96,7 +92,6 @@ class MsalClient {
         },
       };
 
-      // acquireTokenByDeviceCode vai aguardar o usuário completar o login
       pca
         .acquireTokenByDeviceCode(request)
         .then(async (result) => {
@@ -105,7 +100,6 @@ class MsalClient {
           }
         })
         .catch((error) => {
-          // Erro aqui é normal se o usuário demorar ou cancelar
           console.error("Device code flow error:", error.message);
         });
     });
@@ -148,7 +142,6 @@ class MsalClient {
       await this.saveCache();
       return result.accessToken;
     } catch {
-      // Silent flow falhou, token pode ter expirado
       throw new Error(
         "No token available. Silent token refresh failed. Use the 'login' tool to re-authenticate."
       );
@@ -183,5 +176,4 @@ class MsalClient {
   }
 }
 
-// Singleton
 export const msalClient = new MsalClient();
