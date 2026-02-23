@@ -1,9 +1,15 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import * as mail from "../services/mail.js";
+import type { MailService } from "../services/mail.js";
 import { safeTool } from "../utils/errors.js";
+import {
+  formatEmailList,
+  formatEmailSearchResults,
+  formatEmailDetail,
+  formatMailFolders,
+} from "../formatters/mail.js";
 
-export function registerMailTools(server: McpServer) {
+export function registerMailTools(server: McpServer, mail: MailService) {
   server.tool(
     "list-emails",
     "Lista emails do Outlook. Por padrão retorna os 10 emails mais recentes da Inbox.",
@@ -15,23 +21,8 @@ export function registerMailTools(server: McpServer) {
     },
     safeTool(async (params) => {
       const emails = await mail.listEmails(params);
-      const formatted = emails.map((e: any) => {
-        const from = e.from?.emailAddress?.address ?? "unknown";
-        const date = new Date(e.receivedDateTime).toLocaleString("pt-BR");
-        const read = e.isRead ? "" : " [NÃO LIDO]";
-        const attach = e.hasAttachments ? " [ANEXO]" : "";
-        return `- **${e.subject}**${read}${attach}\n  De: ${from} | ${date}\n  ID: ${e.id}\n  ${e.bodyPreview?.substring(0, 100) ?? ""}...`;
-      });
-
       return {
-        content: [
-          {
-            type: "text" as const,
-            text: formatted.length > 0
-              ? `## Emails (${formatted.length})\n\n${formatted.join("\n\n")}`
-              : "Nenhum email encontrado.",
-          },
-        ],
+        content: [{ type: "text" as const, text: formatEmailList(emails) }],
       };
     })
   );
@@ -45,21 +36,8 @@ export function registerMailTools(server: McpServer) {
     },
     safeTool(async (params) => {
       const emails = await mail.searchEmails(params.query, params.top);
-      const formatted = emails.map((e: any) => {
-        const from = e.from?.emailAddress?.address ?? "unknown";
-        const date = new Date(e.receivedDateTime).toLocaleString("pt-BR");
-        return `- **${e.subject}**\n  De: ${from} | ${date}\n  ID: ${e.id}`;
-      });
-
       return {
-        content: [
-          {
-            type: "text" as const,
-            text: formatted.length > 0
-              ? `## Resultados da busca "${params.query}" (${formatted.length})\n\n${formatted.join("\n\n")}`
-              : `Nenhum email encontrado para "${params.query}".`,
-          },
-        ],
+        content: [{ type: "text" as const, text: formatEmailSearchResults(params.query, emails) }],
       };
     })
   );
@@ -72,33 +50,8 @@ export function registerMailTools(server: McpServer) {
     },
     safeTool(async (params) => {
       const email = await mail.readEmail(params.messageId);
-      const from = email.from?.emailAddress?.address ?? "unknown";
-      const to = email.toRecipients?.map((r: any) => r.emailAddress?.address).join(", ") ?? "";
-      const cc = email.ccRecipients?.map((r: any) => r.emailAddress?.address).join(", ");
-      const date = new Date(email.receivedDateTime).toLocaleString("pt-BR");
-      const bodyContent = email.body?.content ?? "(sem conteúdo)";
-
-      let text = [
-        `## ${email.subject}`,
-        "",
-        `**De:** ${from}`,
-        `**Para:** ${to}`,
-      ];
-      if (cc) text.push(`**CC:** ${cc}`);
-      text.push(`**Data:** ${date}`);
-      text.push("");
-      text.push(bodyContent);
-
-      if (email.hasAttachments && email.attachments?.length) {
-        text.push("");
-        text.push("### Anexos");
-        for (const att of email.attachments) {
-          text.push(`- ${att.name} (${att.contentType}, ${att.size} bytes)`);
-        }
-      }
-
       return {
-        content: [{ type: "text" as const, text: text.join("\n") }],
+        content: [{ type: "text" as const, text: formatEmailDetail(email) }],
       };
     })
   );
@@ -112,7 +65,7 @@ export function registerMailTools(server: McpServer) {
       body: z.string().describe("Corpo do email"),
       cc: z.array(z.string()).optional().describe("Lista de endereços CC"),
       bcc: z.array(z.string()).optional().describe("Lista de endereços BCC"),
-      isHtml: z.boolean().optional().describe("Se true, o corpo é HTML (padrão: texto plano)"),
+      contentType: z.enum(["Text", "HTML"]).optional().describe("Tipo de conteúdo: 'Text' ou 'HTML' (padrão: Text)"),
     },
     safeTool(async (params) => {
       await mail.sendEmail(params);
@@ -150,18 +103,8 @@ export function registerMailTools(server: McpServer) {
     {},
     safeTool(async () => {
       const folders = await mail.listMailFolders();
-      const formatted = folders.map(
-        (f: any) =>
-          `- **${f.displayName}** — ${f.unreadItemCount} não lidos / ${f.totalItemCount} total\n  ID: ${f.id}`
-      );
-
       return {
-        content: [
-          {
-            type: "text" as const,
-            text: `## Pastas de Email\n\n${formatted.join("\n\n")}`,
-          },
-        ],
+        content: [{ type: "text" as const, text: formatMailFolders(folders) }],
       };
     })
   );

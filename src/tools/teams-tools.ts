@@ -1,28 +1,23 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import * as teams from "../services/teams.js";
+import type { TeamsService } from "../services/teams.js";
 import { safeTool } from "../utils/errors.js";
+import {
+  formatTeamList,
+  formatChannelList,
+  formatChannelMessages,
+  formatChatList,
+} from "../formatters/teams.js";
 
-export function registerTeamsTools(server: McpServer) {
+export function registerTeamsTools(server: McpServer, teams: TeamsService) {
   server.tool(
     "list-teams",
     "Lista os times do Microsoft Teams que o usuário participa.",
     {},
     safeTool(async () => {
       const teamsList = await teams.listTeams();
-      const formatted = teamsList.map(
-        (t: any) => `- **${t.displayName}**\n  ${t.description ?? ""}\n  ID: ${t.id}`
-      );
-
       return {
-        content: [
-          {
-            type: "text" as const,
-            text: formatted.length > 0
-              ? `## Times (${formatted.length})\n\n${formatted.join("\n\n")}`
-              : "Nenhum time encontrado.",
-          },
-        ],
+        content: [{ type: "text" as const, text: formatTeamList(teamsList) }],
       };
     })
   );
@@ -35,20 +30,8 @@ export function registerTeamsTools(server: McpServer) {
     },
     safeTool(async (params) => {
       const channels = await teams.listChannels(params.teamId);
-      const formatted = channels.map(
-        (c: any) =>
-          `- **${c.displayName}** (${c.membershipType})\n  ${c.description ?? ""}\n  ID: ${c.id}`
-      );
-
       return {
-        content: [
-          {
-            type: "text" as const,
-            text: formatted.length > 0
-              ? `## Canais (${formatted.length})\n\n${formatted.join("\n\n")}`
-              : "Nenhum canal encontrado.",
-          },
-        ],
+        content: [{ type: "text" as const, text: formatChannelList(channels) }],
       };
     })
   );
@@ -63,22 +46,8 @@ export function registerTeamsTools(server: McpServer) {
     },
     safeTool(async (params) => {
       const messages = await teams.listChannelMessages(params);
-      const formatted = messages.map((m: any) => {
-        const from = m.from?.user?.displayName ?? "Desconhecido";
-        const date = new Date(m.createdDateTime).toLocaleString("pt-BR");
-        const content = m.body?.content?.substring(0, 200) ?? "";
-        return `- **${from}** (${date})\n  ${content}`;
-      });
-
       return {
-        content: [
-          {
-            type: "text" as const,
-            text: formatted.length > 0
-              ? `## Mensagens do Canal (${formatted.length})\n\n${formatted.join("\n\n")}`
-              : "Nenhuma mensagem encontrada.",
-          },
-        ],
+        content: [{ type: "text" as const, text: formatChannelMessages(messages) }],
       };
     })
   );
@@ -110,26 +79,8 @@ export function registerTeamsTools(server: McpServer) {
     },
     safeTool(async (params) => {
       const chats = await teams.listChats(params.top);
-      const formatted = chats.map((c: any) => {
-        const topic = c.topic ?? "Chat sem título";
-        const type = c.chatType ?? "unknown";
-        const updated = c.lastUpdatedDateTime
-          ? new Date(c.lastUpdatedDateTime).toLocaleString("pt-BR")
-          : "N/A";
-        const members =
-          c.members?.map((m: any) => m.displayName).join(", ") ?? "";
-        return `- **${topic}** (${type})\n  Membros: ${members}\n  Última atualização: ${updated}\n  ID: ${c.id}`;
-      });
-
       return {
-        content: [
-          {
-            type: "text" as const,
-            text: formatted.length > 0
-              ? `## Chats (${formatted.length})\n\n${formatted.join("\n\n")}`
-              : "Nenhum chat encontrado.",
-          },
-        ],
+        content: [{ type: "text" as const, text: formatChatList(chats) }],
       };
     })
   );

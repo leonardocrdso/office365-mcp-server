@@ -1,39 +1,13 @@
-import { msalClient } from "../auth/msal-client.js";
+import type { AuthProvider } from "../types/auth.js";
+import type {
+  GraphSite,
+  GraphDrive,
+  GraphDriveItem,
+  GraphSearchResponse,
+  GraphPagedResponse,
+} from "../types/graph.js";
 import { graphFetch } from "../utils/errors.js";
-
-const SP_SCOPES = ["Sites.Read.All", "Sites.ReadWrite.All"];
-
-async function getToken() {
-  return msalClient.getAccessToken(SP_SCOPES);
-}
-
-export async function listSites(query?: string) {
-  const token = await getToken();
-  const searchQuery = query ?? "*";
-  const result = await graphFetch(
-    token,
-    `/sites?search=${encodeURIComponent(searchQuery)}&$select=id,displayName,name,webUrl,description`
-  );
-  return result.value;
-}
-
-export async function getSite(siteId: string) {
-  const token = await getToken();
-  const result = await graphFetch(
-    token,
-    `/sites/${siteId}?$select=id,displayName,name,webUrl,description`
-  );
-  return result;
-}
-
-export async function listDocumentLibraries(siteId: string) {
-  const token = await getToken();
-  const result = await graphFetch(
-    token,
-    `/sites/${siteId}/drives?$select=id,name,driveType,webUrl,description`
-  );
-  return result.value;
-}
+import { SCOPES, DEFAULT_PAGE_SIZE_SMALL, DEFAULT_PAGE_SIZE_LARGE } from "../constants.js";
 
 export interface ListLibraryItemsParams {
   driveId: string;
@@ -41,37 +15,81 @@ export interface ListLibraryItemsParams {
   top?: number;
 }
 
-export async function listLibraryItems(params: ListLibraryItemsParams) {
-  const token = await getToken();
-  const { driveId, itemId, top = 20 } = params;
+export function createSharePointService(auth: AuthProvider) {
+  async function getToken() {
+    return auth.getAccessToken([...SCOPES.SHAREPOINT]);
+  }
 
-  const basePath = itemId
-    ? `/drives/${driveId}/items/${itemId}/children`
-    : `/drives/${driveId}/root/children`;
+  async function listSites(query?: string): Promise<GraphSite[]> {
+    const token = await getToken();
+    const searchQuery = query ?? "*";
+    const result = await graphFetch<GraphPagedResponse<GraphSite>>(
+      token,
+      `/sites?search=${encodeURIComponent(searchQuery)}&$select=id,displayName,name,webUrl,description`
+    );
+    return result.value;
+  }
 
-  const queryParams = new URLSearchParams({
-    $top: String(top),
-    $select: "id,name,size,lastModifiedDateTime,folder,file,webUrl",
-  });
+  async function getSite(siteId: string): Promise<GraphSite> {
+    const token = await getToken();
+    return graphFetch<GraphSite>(
+      token,
+      `/sites/${siteId}?$select=id,displayName,name,webUrl,description`
+    );
+  }
 
-  const result = await graphFetch(token, `${basePath}?${queryParams}`);
-  return result.value;
+  async function listDocumentLibraries(siteId: string): Promise<GraphDrive[]> {
+    const token = await getToken();
+    const result = await graphFetch<GraphPagedResponse<GraphDrive>>(
+      token,
+      `/sites/${siteId}/drives?$select=id,name,driveType,webUrl,description`
+    );
+    return result.value;
+  }
+
+  async function listLibraryItems(params: ListLibraryItemsParams): Promise<GraphDriveItem[]> {
+    const token = await getToken();
+    const { driveId, itemId, top = DEFAULT_PAGE_SIZE_LARGE } = params;
+
+    const basePath = itemId
+      ? `/drives/${driveId}/items/${itemId}/children`
+      : `/drives/${driveId}/root/children`;
+
+    const queryParams = new URLSearchParams({
+      $top: String(top),
+      $select: "id,name,size,lastModifiedDateTime,folder,file,webUrl",
+    });
+
+    const result = await graphFetch<GraphPagedResponse<GraphDriveItem>>(
+      token,
+      `${basePath}?${queryParams}`
+    );
+    return result.value;
+  }
+
+  async function searchSharePoint(query: string): Promise<GraphSearchResponse[]> {
+    const token = await getToken();
+    const result = await graphFetch<GraphPagedResponse<GraphSearchResponse>>(
+      token,
+      "/search/query",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          requests: [
+            {
+              entityTypes: ["driveItem", "listItem", "site"],
+              query: { queryString: query },
+              from: 0,
+              size: DEFAULT_PAGE_SIZE_SMALL,
+            },
+          ],
+        }),
+      }
+    );
+    return result.value;
+  }
+
+  return { listSites, getSite, listDocumentLibraries, listLibraryItems, searchSharePoint };
 }
 
-export async function searchSharePoint(query: string) {
-  const token = await getToken();
-  const result = await graphFetch(token, "/search/query", {
-    method: "POST",
-    body: JSON.stringify({
-      requests: [
-        {
-          entityTypes: ["driveItem", "listItem", "site"],
-          query: { queryString: query },
-          from: 0,
-          size: 10,
-        },
-      ],
-    }),
-  });
-  return result.value;
-}
+export type SharePointService = ReturnType<typeof createSharePointService>;

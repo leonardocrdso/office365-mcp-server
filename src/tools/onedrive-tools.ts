@@ -1,16 +1,15 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import * as onedrive from "../services/onedrive.js";
+import type { OneDriveService } from "../services/onedrive.js";
 import { safeTool } from "../utils/errors.js";
+import {
+  formatDriveItems,
+  formatFileSearchResults,
+  formatUploadResult,
+  formatShareLink,
+} from "../formatters/onedrive.js";
 
-function formatSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
-}
-
-export function registerOneDriveTools(server: McpServer) {
+export function registerOneDriveTools(server: McpServer, onedrive: OneDriveService) {
   server.tool(
     "list-drive-files",
     "Lista arquivos e pastas do OneDrive. Por padrão lista a raiz.",
@@ -21,24 +20,8 @@ export function registerOneDriveTools(server: McpServer) {
     },
     safeTool(async (params) => {
       const items = await onedrive.listFiles(params);
-      const formatted = items.map((item: any) => {
-        const isFolder = !!item.folder;
-        const icon = isFolder ? "[pasta]" : "[arquivo]";
-        const size = item.size ? ` (${formatSize(item.size)})` : "";
-        const modified = new Date(item.lastModifiedDateTime).toLocaleString("pt-BR");
-        const childCount = item.folder?.childCount != null ? ` — ${item.folder.childCount} itens` : "";
-        return `- ${icon} **${item.name}**${size}${childCount}\n  Modificado: ${modified}\n  ID: ${item.id}`;
-      });
-
       return {
-        content: [
-          {
-            type: "text" as const,
-            text: formatted.length > 0
-              ? `## OneDrive (${formatted.length} itens)\n\n${formatted.join("\n\n")}`
-              : "Pasta vazia.",
-          },
-        ],
+        content: [{ type: "text" as const, text: formatDriveItems(items) }],
       };
     })
   );
@@ -72,12 +55,7 @@ export function registerOneDriveTools(server: McpServer) {
     safeTool(async (params) => {
       const result = await onedrive.uploadFile(params);
       return {
-        content: [
-          {
-            type: "text" as const,
-            text: `Arquivo enviado com sucesso!\n\n**${result.name}** (${formatSize(result.size)})\nURL: ${result.webUrl}\nID: ${result.id}`,
-          },
-        ],
+        content: [{ type: "text" as const, text: formatUploadResult(result) }],
       };
     })
   );
@@ -91,21 +69,8 @@ export function registerOneDriveTools(server: McpServer) {
     },
     safeTool(async (params) => {
       const items = await onedrive.searchFiles(params.query, params.top);
-      const formatted = items.map((item: any) => {
-        const size = item.size ? ` (${formatSize(item.size)})` : "";
-        const path = item.parentReference?.path ?? "";
-        return `- **${item.name}**${size}\n  Caminho: ${path}\n  URL: ${item.webUrl}\n  ID: ${item.id}`;
-      });
-
       return {
-        content: [
-          {
-            type: "text" as const,
-            text: formatted.length > 0
-              ? `## Resultados "${params.query}" (${formatted.length})\n\n${formatted.join("\n\n")}`
-              : `Nenhum arquivo encontrado para "${params.query}".`,
-          },
-        ],
+        content: [{ type: "text" as const, text: formatFileSearchResults(params.query, items) }],
       };
     })
   );
@@ -120,14 +85,8 @@ export function registerOneDriveTools(server: McpServer) {
     },
     safeTool(async (params) => {
       const result = await onedrive.shareFile(params);
-      const link = result.link;
       return {
-        content: [
-          {
-            type: "text" as const,
-            text: `Link criado!\n\n**URL:** ${link?.webUrl}\n**Tipo:** ${link?.type}\n**Escopo:** ${link?.scope}`,
-          },
-        ],
+        content: [{ type: "text" as const, text: formatShareLink(result) }],
       };
     })
   );

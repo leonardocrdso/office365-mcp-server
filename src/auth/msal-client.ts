@@ -2,35 +2,20 @@ import {
   PublicClientApplication,
   type Configuration,
   type DeviceCodeRequest,
-  type AuthenticationResult,
   type AccountInfo,
   type SilentFlowRequest,
 } from "@azure/msal-node";
-import { readFile, writeFile, chmod } from "node:fs/promises";
+import { readFile, writeFile, unlink } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import type { AuthProvider } from "../types/auth.js";
+import { SCOPES } from "../constants.js";
 
 const TOKEN_CACHE_PATH = join(homedir(), ".office365-mcp-tokens.json");
 
-const ALL_SCOPES = [
-  "User.Read",
-  "Mail.Read",
-  "Mail.Send",
-  "Mail.ReadWrite",
-  "Calendars.Read",
-  "Calendars.ReadWrite",
-  "Files.Read.All",
-  "Files.ReadWrite.All",
-  "Sites.Read.All",
-  "Sites.ReadWrite.All",
-  "Team.ReadBasic.All",
-  "Channel.ReadBasic.All",
-  "ChannelMessage.Send",
-  "Chat.Read",
-  "Chat.ReadWrite",
-];
+const ALL_SCOPES = ["User.Read", ...Object.values(SCOPES).flat()];
 
-class MsalClient {
+export class MsalClient implements AuthProvider {
   private pca: PublicClientApplication | null = null;
   private deviceCodeCallback: ((message: string) => void) | null = null;
 
@@ -63,7 +48,9 @@ class MsalClient {
       try {
         const cacheData = await readFile(TOKEN_CACHE_PATH, "utf-8");
         this.pca.getTokenCache().deserialize(cacheData);
-      } catch {}
+      } catch (error) {
+        console.error("Failed to load token cache:", error);
+      }
     }
     return this.pca;
   }
@@ -105,24 +92,6 @@ class MsalClient {
     });
   }
 
-  async waitForLogin(): Promise<AuthenticationResult | null> {
-    const pca = await this.getPca();
-    const request: DeviceCodeRequest = {
-      scopes: ALL_SCOPES,
-      deviceCodeCallback: () => {},
-    };
-
-    try {
-      const result = await pca.acquireTokenByDeviceCode(request);
-      if (result) {
-        await this.saveCache();
-      }
-      return result;
-    } catch {
-      return null;
-    }
-  }
-
   async getAccessToken(scopes?: string[]): Promise<string> {
     const pca = await this.getPca();
     const accounts = await pca.getTokenCache().getAllAccounts();
@@ -141,7 +110,8 @@ class MsalClient {
       const result = await pca.acquireTokenSilent(silentRequest);
       await this.saveCache();
       return result.accessToken;
-    } catch {
+    } catch (error) {
+      console.error("Silent token acquisition failed:", error);
       throw new Error(
         "No token available. Silent token refresh failed. Use the 'login' tool to re-authenticate."
       );
@@ -156,7 +126,8 @@ class MsalClient {
         return { isLoggedIn: false };
       }
       return { isLoggedIn: true, account: accounts[0] as AccountInfo };
-    } catch {
+    } catch (error) {
+      console.error("Get account info failed:", error);
       return { isLoggedIn: false };
     }
   }
@@ -169,9 +140,10 @@ class MsalClient {
       }
     }
     try {
-      const { unlink } = await import("node:fs/promises");
       await unlink(TOKEN_CACHE_PATH);
-    } catch {}
+    } catch (error) {
+      console.error("Failed to remove token cache file:", error);
+    }
     this.pca = null;
   }
 }

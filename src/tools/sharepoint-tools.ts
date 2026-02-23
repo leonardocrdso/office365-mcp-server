@@ -1,9 +1,16 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import * as sharepoint from "../services/sharepoint.js";
+import type { SharePointService } from "../services/sharepoint.js";
 import { safeTool } from "../utils/errors.js";
+import {
+  formatSiteList,
+  formatSiteDetail,
+  formatDocumentLibraries,
+  formatLibraryItems,
+  formatSearchResults,
+} from "../formatters/sharepoint.js";
 
-export function registerSharePointTools(server: McpServer) {
+export function registerSharePointTools(server: McpServer, sharepoint: SharePointService) {
   server.tool(
     "list-sites",
     "Lista sites do SharePoint. Opcionalmente filtra por nome.",
@@ -12,20 +19,8 @@ export function registerSharePointTools(server: McpServer) {
     },
     safeTool(async (params) => {
       const sites = await sharepoint.listSites(params.query);
-      const formatted = sites.map(
-        (s: any) =>
-          `- **${s.displayName}** (${s.name})\n  ${s.description ?? ""}\n  URL: ${s.webUrl}\n  ID: ${s.id}`
-      );
-
       return {
-        content: [
-          {
-            type: "text" as const,
-            text: formatted.length > 0
-              ? `## Sites SharePoint (${formatted.length})\n\n${formatted.join("\n\n")}`
-              : "Nenhum site encontrado.",
-          },
-        ],
+        content: [{ type: "text" as const, text: formatSiteList(sites) }],
       };
     })
   );
@@ -39,19 +34,7 @@ export function registerSharePointTools(server: McpServer) {
     safeTool(async (params) => {
       const site = await sharepoint.getSite(params.siteId);
       return {
-        content: [
-          {
-            type: "text" as const,
-            text: [
-              `## ${site.displayName}`,
-              "",
-              `**Nome:** ${site.name}`,
-              `**Descrição:** ${site.description ?? "N/A"}`,
-              `**URL:** ${site.webUrl}`,
-              `**ID:** ${site.id}`,
-            ].join("\n"),
-          },
-        ],
+        content: [{ type: "text" as const, text: formatSiteDetail(site) }],
       };
     })
   );
@@ -64,20 +47,8 @@ export function registerSharePointTools(server: McpServer) {
     },
     safeTool(async (params) => {
       const drives = await sharepoint.listDocumentLibraries(params.siteId);
-      const formatted = drives.map(
-        (d: any) =>
-          `- **${d.name}** (${d.driveType})\n  ${d.description ?? ""}\n  URL: ${d.webUrl}\n  ID: ${d.id}`
-      );
-
       return {
-        content: [
-          {
-            type: "text" as const,
-            text: formatted.length > 0
-              ? `## Bibliotecas de Documentos (${formatted.length})\n\n${formatted.join("\n\n")}`
-              : "Nenhuma biblioteca encontrada.",
-          },
-        ],
+        content: [{ type: "text" as const, text: formatDocumentLibraries(drives) }],
       };
     })
   );
@@ -92,22 +63,8 @@ export function registerSharePointTools(server: McpServer) {
     },
     safeTool(async (params) => {
       const items = await sharepoint.listLibraryItems(params);
-      const formatted = items.map((item: any) => {
-        const isFolder = !!item.folder;
-        const icon = isFolder ? "[pasta]" : "[arquivo]";
-        const size = item.size ? ` (${item.size} bytes)` : "";
-        return `- ${icon} **${item.name}**${size}\n  URL: ${item.webUrl}\n  ID: ${item.id}`;
-      });
-
       return {
-        content: [
-          {
-            type: "text" as const,
-            text: formatted.length > 0
-              ? `## Itens (${formatted.length})\n\n${formatted.join("\n\n")}`
-              : "Nenhum item encontrado.",
-          },
-        ],
+        content: [{ type: "text" as const, text: formatLibraryItems(items) }],
       };
     })
   );
@@ -120,31 +77,8 @@ export function registerSharePointTools(server: McpServer) {
     },
     safeTool(async (params) => {
       const results = await sharepoint.searchSharePoint(params.query);
-
-      if (!results?.length || !results[0]?.hitsContainers?.length) {
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: `Nenhum resultado encontrado para "${params.query}".`,
-            },
-          ],
-        };
-      }
-
-      const hits = results[0].hitsContainers[0].hits ?? [];
-      const formatted = hits.map((hit: any) => {
-        const resource = hit.resource;
-        return `- **${resource?.name ?? "Sem nome"}** (${hit.hitId})\n  Resumo: ${hit.summary ?? "N/A"}\n  URL: ${resource?.webUrl ?? "N/A"}`;
-      });
-
       return {
-        content: [
-          {
-            type: "text" as const,
-            text: `## Resultados SharePoint "${params.query}" (${formatted.length})\n\n${formatted.join("\n\n")}`,
-          },
-        ],
+        content: [{ type: "text" as const, text: formatSearchResults(params.query, results) }],
       };
     })
   );
