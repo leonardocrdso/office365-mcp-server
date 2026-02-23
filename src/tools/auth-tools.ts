@@ -1,6 +1,6 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { msalClient } from "../auth/msal-client.ts";
-import { safeTool } from "../utils/errors.ts";
+import { msalClient } from "../auth/msal-client.js";
+import { safeTool } from "../utils/errors.js";
 
 export function registerAuthTools(server: McpServer) {
   server.tool(

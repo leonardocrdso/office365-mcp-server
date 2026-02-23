@@ -1,7 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import * as mail from "../services/mail.ts";
-import { safeTool } from "../utils/errors.ts";
+import * as mail from "../services/mail.js";
+import { safeTool } from "../utils/errors.js";
 
 export function registerMailTools(server: McpServer) {
   server.tool(

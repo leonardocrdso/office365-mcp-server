@@ -1,24 +1,57 @@
 {
-  "name": "office365-mcp",
+  "name": "@leonardocrdso/office365-mcp-server",
   "version": "1.0.0",
-  "module": "src/index.ts",
+  "description": "MCP server for Microsoft 365 — Outlook, Calendar, OneDrive, SharePoint & Teams via Graph API",
   "type": "module",
-  "private": true,
+  "main": "build/index.js",
+  "bin": {
+    "office365-mcp-server": "build/index.js"
+  },
+  "files": [
+    "build/",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
+    "dev": "bun run --watch src/index.ts",
     "start": "bun run src/index.ts",
-    "dev": "bun --watch run src/index.ts"
+    "build": "bun build src/index.ts --outdir build --target node",
+    "prepublishOnly": "bun run build"
   },
-  "devDependencies": {
-    "@types/bun": "latest",
-    "bun-types": "^1.3.9"
+  "keywords": [
+    "office365",
+    "microsoft-365",
+    "outlook",
+    "teams",
+    "onedrive",
+    "sharepoint",
+    "calendar",
+    "mcp",
+    "model-context-protocol",
+    "microsoft-graph",
+    "claude",
+    "ai"
+  ],
+  "author": "leonardocrdso",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/leonardocrdso/office365-mcp-server.git"
   },
-  "peerDependencies": {
-    "typescript": "^5"
+  "homepage": "https://github.com/leonardocrdso/office365-mcp-server#readme",
+  "bugs": {
+    "url": "https://github.com/leonardocrdso/office365-mcp-server/issues"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "dependencies": {
     "@azure/msal-node": "^3.8.8",
-    "@microsoft/microsoft-graph-client": "^3.0.7",
     "@modelcontextprotocol/sdk": "^1.26.0",
-    "zod": "^4.3.6"
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.0.0"
   }
 }

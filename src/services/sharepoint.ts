@@ -1,5 +1,5 @@
-import { msalClient } from "../auth/msal-client.ts";
-import { graphFetch } from "../utils/errors.ts";
+import { msalClient } from "../auth/msal-client.js";
+import { graphFetch } from "../utils/errors.js";
 
 const SP_SCOPES = ["Sites.Read.All", "Sites.ReadWrite.All"];
 

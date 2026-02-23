@@ -1,7 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import * as calendar from "../services/calendar.ts";
-import { safeTool } from "../utils/errors.ts";
+import * as calendar from "../services/calendar.js";
+import { safeTool } from "../utils/errors.js";
 
 export function registerCalendarTools(server: McpServer) {
   server.tool(

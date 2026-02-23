@@ -1,7 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import * as onedrive from "../services/onedrive.ts";
-import { safeTool } from "../utils/errors.ts";
+import * as onedrive from "../services/onedrive.js";
+import { safeTool } from "../utils/errors.js";
 
 function formatSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;

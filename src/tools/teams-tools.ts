@@ -1,7 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import * as teams from "../services/teams.ts";
-import { safeTool } from "../utils/errors.ts";
+import * as teams from "../services/teams.js";
+import { safeTool } from "../utils/errors.js";
 
 export function registerTeamsTools(server: McpServer) {
   server.tool(

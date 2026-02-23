@@ -1,24 +1,39 @@
-# Office 365 MCP Server
+# @leonardocrdso/office365-mcp-server
 
-MCP (Model Context Protocol) server for Microsoft 365 integration. Allows AI assistants like Claude to interact with Outlook, Calendar, OneDrive, SharePoint and Teams via Microsoft Graph API.
+An MCP (Model Context Protocol) server for Microsoft 365 integration. Interact with Outlook, Calendar, OneDrive, SharePoint and Teams via Microsoft Graph API.
 
-## Features
+## Installation
 
-**30 tools** across 6 modules:
+### Using npx (recommended)
 
-| Module | Tools | Description |
-|--------|-------|-------------|
-| **Auth** | `login`, `auth-status`, `logout` | Device Code Flow authentication |
-| **Mail** | `list-emails`, `search-emails`, `read-email`, `send-email`, `reply-email`, `list-mail-folders` | Outlook email operations |
-| **Calendar** | `list-events`, `create-event`, `update-event`, `delete-event`, `find-free-slots` | Calendar & meeting management |
-| **OneDrive** | `list-drive-files`, `read-file-content`, `upload-file`, `search-files`, `share-file` | File storage operations |
-| **SharePoint** | `list-sites`, `get-site`, `list-document-libraries`, `list-library-items`, `search-sharepoint` | SharePoint site & document management |
-| **Teams** | `list-teams`, `list-channels`, `list-channel-messages`, `send-channel-message`, `list-chats`, `send-chat-message` | Teams messaging |
+```bash
+AZURE_CLIENT_ID=your-client-id npx @leonardocrdso/office365-mcp-server
+```
 
-## Prerequisites
+### Adding to Claude Code
 
-- [Bun](https://bun.sh/) runtime
-- Azure AD (Entra ID) app registration
+```bash
+claude mcp add office365-mcp-server -e AZURE_CLIENT_ID=your-client-id -- npx @leonardocrdso/office365-mcp-server
+```
+
+### Manual configuration
+
+Add to your MCP client settings:
+
+```json
+{
+  "mcpServers": {
+    "office365-mcp-server": {
+      "command": "npx",
+      "args": ["@leonardocrdso/office365-mcp-server"],
+      "env": {
+        "AZURE_CLIENT_ID": "your-client-id",
+        "AZURE_TENANT_ID": "common"
+      }
+    }
+  }
+}
+```
 
 ## Azure AD Setup
 
@@ -36,63 +51,90 @@ MCP (Model Context Protocol) server for Microsoft 365 integration. Allows AI ass
    - `Sites.Read.All`, `Sites.ReadWrite.All`
    - `Team.ReadBasic.All`, `Channel.ReadBasic.All`, `ChannelMessage.Send`
    - `Chat.Read`, `Chat.ReadWrite`
-5. Copy the **Application (client) ID**
+5. Copy the **Application (client) ID** and use as `AZURE_CLIENT_ID`
 
-## Installation
+## Tools
+
+### Auth
+
+| Tool | Description |
+|------|-------------|
+| `login` | Start Device Code Flow authentication — returns a code and URL |
+| `auth-status` | Check authentication status and show logged-in user info |
+| `logout` | Sign out and remove cached tokens |
+
+### Mail
+
+| Tool | Description |
+|------|-------------|
+| `list-emails` | List emails from Outlook (inbox or specific folder) |
+| `search-emails` | Search emails by KQL query |
+| `read-email` | Read full email content by ID |
+| `send-email` | Send a new email |
+| `reply-email` | Reply to an existing email |
+| `list-mail-folders` | List email folders |
+
+### Calendar
+
+| Tool | Description |
+|------|-------------|
+| `list-events` | List calendar events in a date range |
+| `create-event` | Create a new event or meeting |
+| `update-event` | Update an existing event |
+| `delete-event` | Delete an event |
+| `find-free-slots` | Check availability for meeting attendees |
+
+### OneDrive
+
+| Tool | Description |
+|------|-------------|
+| `list-drive-files` | List files and folders |
+| `read-file-content` | Read text file content |
+| `upload-file` | Upload a file (up to 4MB text) |
+| `search-files` | Search files by text |
+| `share-file` | Create a sharing link |
+
+### SharePoint
+
+| Tool | Description |
+|------|-------------|
+| `list-sites` | List SharePoint sites |
+| `get-site` | Get site details |
+| `list-document-libraries` | List document libraries |
+| `list-library-items` | List library items |
+| `search-sharepoint` | Search SharePoint content |
+
+### Teams
+
+| Tool | Description |
+|------|-------------|
+| `list-teams` | List joined teams |
+| `list-channels` | List team channels |
+| `list-channel-messages` | List channel messages |
+| `send-channel-message` | Send a channel message |
+| `list-chats` | List direct chats |
+| `send-chat-message` | Send a chat message |
+
+## Environment Variables
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `AZURE_CLIENT_ID` | Yes | — | App registration client ID |
+| `AZURE_TENANT_ID` | No | `common` | Tenant ID or `common` for multi-tenant |
+
+## Development
 
 ```bash
-git clone https://github.com/leonardocrdso/office365-mcp-server.git
-cd office365-mcp-server
+# Install dependencies
 bun install
+
+# Run in development mode
+bun run dev
+
+# Build
+bun run build
 ```
-
-## Configuration
-
-Set environment variables:
-
-```bash
-export AZURE_CLIENT_ID=your-client-id
-export AZURE_TENANT_ID=common  # or your specific tenant ID
-```
-
-## Usage
-
-### With Claude Code
-
-```bash
-claude mcp add office365 -e AZURE_CLIENT_ID=your-client-id -- bun run /path/to/office365-mcp-server/src/index.ts
-```
-
-### With Claude Desktop
-
-Add to your `claude_desktop_config.json`:
-
-```json
-{
-  "mcpServers": {
-    "office365": {
-      "command": "bun",
-      "args": ["run", "/path/to/office365-mcp-server/src/index.ts"],
-      "env": {
-        "AZURE_CLIENT_ID": "your-client-id",
-        "AZURE_TENANT_ID": "common"
-      }
-    }
-  }
-}
-```
-
-### Authentication
-
-After adding the server, use the `login` tool. It will return a code and URL — open the URL in your browser, enter the code and sign in with your Microsoft account. Tokens are cached locally at `~/.office365-mcp-tokens.json`.
-
-## Tech Stack
-
-- **Runtime:** [Bun](https://bun.sh/)
-- **Protocol:** [MCP SDK](https://github.com/modelcontextprotocol/typescript-sdk) v1.26
-- **Auth:** [MSAL Node](https://github.com/AzureAD/microsoft-authentication-library-for-js) (Device Code Flow)
-- **API:** [Microsoft Graph](https://learn.microsoft.com/en-us/graph/overview) v1.0
 
 ## License
 
-[MIT](LICENSE)
+MIT

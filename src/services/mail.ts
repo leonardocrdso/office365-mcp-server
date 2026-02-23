@@ -1,5 +1,5 @@
-import { msalClient } from "../auth/msal-client.ts";
-import { graphFetch } from "../utils/errors.ts";
+import { msalClient } from "../auth/msal-client.js";
+import { graphFetch } from "../utils/errors.js";
 
 const MAIL_SCOPES = ["Mail.Read", "Mail.Send", "Mail.ReadWrite"];
 

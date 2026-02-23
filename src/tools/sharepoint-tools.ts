@@ -1,7 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import * as sharepoint from "../services/sharepoint.ts";
-import { safeTool } from "../utils/errors.ts";
+import * as sharepoint from "../services/sharepoint.js";
+import { safeTool } from "../utils/errors.js";
 
 export function registerSharePointTools(server: McpServer) {
   server.tool(
