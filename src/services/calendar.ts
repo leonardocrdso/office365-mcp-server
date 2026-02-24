@@ -4,7 +4,7 @@ import type {
   GraphFindMeetingTimesResponse,
   GraphPagedResponse,
 } from "../types/graph.js";
-import { graphFetch } from "../utils/errors.js";
+import { graphFetch, graphFetchVoid } from "../utils/graph-client.js";
 import {
   SCOPES,
   DEFAULT_PAGE_SIZE_LARGE,
@@ -129,7 +129,7 @@ export function createCalendarService(auth: AuthProvider) {
 
   async function deleteEvent(eventId: string): Promise<{ success: true }> {
     const token = await getToken();
-    await graphFetch(token, `/me/events/${eventId}`, { method: "DELETE" });
+    await graphFetchVoid(token, `/me/events/${eventId}`, { method: "DELETE" });
     return { success: true };
   }
 

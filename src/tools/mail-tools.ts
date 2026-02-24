@@ -1,7 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { MailService } from "../services/mail.js";
-import { safeTool } from "../utils/errors.js";
+import { safeTool } from "../utils/safe-tool.js";
 import {
   formatEmailList,
   formatEmailSearchResults,

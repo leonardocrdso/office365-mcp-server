@@ -1,7 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { CalendarService } from "../services/calendar.js";
-import { safeTool } from "../utils/errors.js";
+import { safeTool } from "../utils/safe-tool.js";
 import {
   formatEventList,
   formatCreatedEvent,

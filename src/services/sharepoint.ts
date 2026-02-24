@@ -6,7 +6,7 @@ import type {
   GraphSearchResponse,
   GraphPagedResponse,
 } from "../types/graph.js";
-import { graphFetch } from "../utils/errors.js";
+import { graphFetch } from "../utils/graph-client.js";
 import { SCOPES, DEFAULT_PAGE_SIZE_SMALL, DEFAULT_PAGE_SIZE_LARGE } from "../constants.js";
 
 export interface ListLibraryItemsParams {

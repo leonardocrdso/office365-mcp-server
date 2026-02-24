@@ -4,7 +4,7 @@ import type {
   GraphMailFolder,
   GraphPagedResponse,
 } from "../types/graph.js";
-import { graphFetch } from "../utils/errors.js";
+import { graphFetch, graphFetchVoid } from "../utils/graph-client.js";
 import { SCOPES, DEFAULT_PAGE_SIZE_SMALL } from "../constants.js";
 
 export interface ListEmailsParams {
@@ -88,7 +88,7 @@ export function createMailService(auth: AuthProvider) {
       emailAddress: { address: email },
     }));
 
-    await graphFetch(token, "/me/sendMail", {
+    await graphFetchVoid(token, "/me/sendMail", {
       method: "POST",
       body: JSON.stringify({
         message: {
@@ -112,7 +112,7 @@ export function createMailService(auth: AuthProvider) {
     comment: string
   ): Promise<{ success: true }> {
     const token = await getToken();
-    await graphFetch(token, `/me/messages/${messageId}/reply`, {
+    await graphFetchVoid(token, `/me/messages/${messageId}/reply`, {
       method: "POST",
       body: JSON.stringify({ comment }),
     });

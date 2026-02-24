@@ -10,6 +10,7 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import type { AuthProvider } from "../types/auth.js";
 import { SCOPES } from "../constants.js";
+import { AuthError, ErrorCode } from "../utils/errors.js";
 
 const TOKEN_CACHE_PATH = join(homedir(), ".office365-mcp-tokens.json");
 
@@ -26,8 +27,9 @@ export class MsalClient implements AuthProvider {
   private getConfig(): Configuration {
     const clientId = process.env.AZURE_CLIENT_ID;
     if (!clientId) {
-      throw new Error(
-        "AZURE_CLIENT_ID não configurado. Defina a variável de ambiente AZURE_CLIENT_ID com o ID do seu app registration no Azure AD."
+      throw new AuthError(
+        "AZURE_CLIENT_ID não configurado.",
+        ErrorCode.AUTH_NOT_CONFIGURED
       );
     }
 
@@ -97,7 +99,10 @@ export class MsalClient implements AuthProvider {
     const accounts = await pca.getTokenCache().getAllAccounts();
 
     if (accounts.length === 0) {
-      throw new Error("No account found. Use the 'login' tool to authenticate first.");
+      throw new AuthError(
+        "Nenhuma conta encontrada.",
+        ErrorCode.AUTH_NOT_AUTHENTICATED
+      );
     }
 
     const account = accounts[0] as AccountInfo;
@@ -112,8 +117,9 @@ export class MsalClient implements AuthProvider {
       return result.accessToken;
     } catch (error) {
       console.error("Silent token acquisition failed:", error);
-      throw new Error(
-        "No token available. Silent token refresh failed. Use the 'login' tool to re-authenticate."
+      throw new AuthError(
+        "Falha ao renovar token silenciosamente.",
+        ErrorCode.AUTH_TOKEN_REFRESH_FAILED
       );
     }
   }

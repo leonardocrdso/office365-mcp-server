@@ -1,7 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { TeamsService } from "../services/teams.js";
-import { safeTool } from "../utils/errors.js";
+import { safeTool } from "../utils/safe-tool.js";
 import {
   formatTeamList,
   formatChannelList,
