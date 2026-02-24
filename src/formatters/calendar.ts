@@ -5,8 +5,8 @@ export function formatEventList(events: GraphEvent[]): string {
   if (events.length === 0) return "Nenhum evento encontrado no período.";
 
   const formatted = events.map((e) => {
-    const start = new Date(e.start.dateTime).toLocaleString("pt-BR");
-    const end = new Date(e.end.dateTime).toLocaleString("pt-BR");
+    const start = new Date(e.start.dateTime).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
+    const end = new Date(e.end.dateTime).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
     const location = e.location?.displayName ? ` @ ${e.location.displayName}` : "";
     const online = e.isOnlineMeeting ? " [Online]" : "";
     const attendees = e.attendees?.length
@@ -35,8 +35,8 @@ export function formatFreeSlotsResult(result: GraphFindMeetingTimesResponse): st
   }
 
   const formatted = suggestions.map((s, i) => {
-    const start = new Date(s.meetingTimeSlot.start.dateTime).toLocaleString("pt-BR");
-    const end = new Date(s.meetingTimeSlot.end.dateTime).toLocaleString("pt-BR");
+    const start = new Date(s.meetingTimeSlot.start.dateTime).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
+    const end = new Date(s.meetingTimeSlot.end.dateTime).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
     return `${i + 1}. ${start} → ${end} (confiança: ${s.confidence}%)`;
   });
 

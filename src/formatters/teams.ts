@@ -33,7 +33,7 @@ export function formatChannelMessages(messages: GraphChatMessage[]): string {
 
   const formatted = messages.map((m) => {
     const from = messageSenderName(m);
-    const date = new Date(m.createdDateTime).toLocaleString("pt-BR");
+    const date = new Date(m.createdDateTime).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
     const content = m.body?.content?.substring(0, MESSAGE_CONTENT_MAX_LENGTH) ?? "";
     return `- **${from}** (${date})\n  ${content}`;
   });
@@ -48,7 +48,7 @@ export function formatChatList(chats: GraphChat[]): string {
     const topic = c.topic ?? "Chat sem título";
     const type = c.chatType ?? "unknown";
     const updated = c.lastUpdatedDateTime
-      ? new Date(c.lastUpdatedDateTime).toLocaleString("pt-BR")
+      ? new Date(c.lastUpdatedDateTime).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })
       : "N/A";
     const members =
       c.members?.map((m) => m.displayName).join(", ") ?? "";

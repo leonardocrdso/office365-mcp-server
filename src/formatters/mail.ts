@@ -7,7 +7,7 @@ export function formatEmailList(emails: GraphEmailMessage[]): string {
 
   const formatted = emails.map((e) => {
     const from = recipientAddress(e.from);
-    const date = new Date(e.receivedDateTime).toLocaleString("pt-BR");
+    const date = new Date(e.receivedDateTime).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
     const read = e.isRead ? "" : " [NÃO LIDO]";
     const attach = e.hasAttachments ? " [ANEXO]" : "";
     return `- **${e.subject}**${read}${attach}\n  De: ${from} | ${date}\n  ID: ${e.id}\n  ${e.bodyPreview?.substring(0, BODY_PREVIEW_MAX_LENGTH) ?? ""}...`;
@@ -24,7 +24,7 @@ export function formatEmailSearchResults(
 
   const formatted = emails.map((e) => {
     const from = recipientAddress(e.from);
-    const date = new Date(e.receivedDateTime).toLocaleString("pt-BR");
+    const date = new Date(e.receivedDateTime).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
     return `- **${e.subject}**\n  De: ${from} | ${date}\n  ID: ${e.id}`;
   });
 
@@ -35,7 +35,7 @@ export function formatEmailDetail(email: GraphEmailMessage): string {
   const from = recipientAddress(email.from);
   const to = recipientAddresses(email.toRecipients);
   const cc = recipientAddresses(email.ccRecipients);
-  const date = new Date(email.receivedDateTime).toLocaleString("pt-BR");
+  const date = new Date(email.receivedDateTime).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
   const bodyContent = email.body?.content ?? "(sem conteúdo)";
 
   const text = [

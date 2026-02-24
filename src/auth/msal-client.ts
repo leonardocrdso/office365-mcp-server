@@ -19,6 +19,7 @@ const ALL_SCOPES = ["User.Read", ...Object.values(SCOPES).flat()];
 export class MsalClient implements AuthProvider {
   private pca: PublicClientApplication | null = null;
   private deviceCodeCallback: ((message: string) => void) | null = null;
+  private pendingLogin: Promise<void> | null = null;
 
   setDeviceCodeCallback(callback: (message: string) => void) {
     this.deviceCodeCallback = callback;
@@ -81,15 +82,22 @@ export class MsalClient implements AuthProvider {
         },
       };
 
-      pca
+      this.pendingLogin = pca
         .acquireTokenByDeviceCode(request)
         .then(async (result) => {
           if (result) {
+            console.error("[msal] Token acquired, saving cache...");
             await this.saveCache();
+            console.error("[msal] Cache saved successfully");
+          } else {
+            console.error("[msal] acquireTokenByDeviceCode returned null");
           }
         })
         .catch((error) => {
-          console.error("Device code flow error:", error.message);
+          console.error("[msal] Device code flow error:", error.message);
+        })
+        .finally(() => {
+          this.pendingLogin = null;
         });
     });
   }

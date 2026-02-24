@@ -14,7 +14,7 @@ export function formatDriveItems(items: GraphDriveItem[]): string {
     const isFolder = !!item.folder;
     const icon = isFolder ? "[pasta]" : "[arquivo]";
     const size = item.size ? ` (${formatSize(item.size)})` : "";
-    const modified = new Date(item.lastModifiedDateTime).toLocaleString("pt-BR");
+    const modified = new Date(item.lastModifiedDateTime).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
     const childCount = item.folder?.childCount != null ? ` — ${item.folder.childCount} itens` : "";
     return `- ${icon} **${item.name}**${size}${childCount}\n  Modificado: ${modified}\n  ID: ${item.id}`;
   });

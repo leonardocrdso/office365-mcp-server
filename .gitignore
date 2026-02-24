@@ -3,4 +3,5 @@ build/
 .env
 .npmrc
 publish.sh
+test-login.ts
 .claude/settings.local.json
