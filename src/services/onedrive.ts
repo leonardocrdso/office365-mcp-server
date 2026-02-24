@@ -6,6 +6,7 @@ import type {
 } from "../types/graph.js";
 import { graphFetch } from "../utils/graph-client.js";
 import { SCOPES, DEFAULT_PAGE_SIZE_SMALL, DEFAULT_PAGE_SIZE_LARGE } from "../constants.js";
+import { createGetToken } from "../utils/auth-helper.js";
 
 export interface ListFilesParams {
   itemId?: string;
@@ -25,9 +26,7 @@ export interface ShareFileParams {
 }
 
 export function createOneDriveService(auth: AuthProvider) {
-  async function getToken() {
-    return auth.getAccessToken([...SCOPES.DRIVE]);
-  }
+  const getToken = createGetToken(auth, SCOPES.DRIVE);
 
   async function listFiles(params: ListFilesParams = {}): Promise<GraphDriveItem[]> {
     const token = await getToken();

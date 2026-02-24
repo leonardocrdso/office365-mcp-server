@@ -1,11 +1,6 @@
 import type { GraphDriveItem, GraphSharingLink } from "../types/graph.js";
-
-export function formatSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
-}
+import { formatDateBR } from "../utils/date.js";
+import { formatSize } from "../utils/format.js";
 
 export function formatDriveItems(items: GraphDriveItem[]): string {
   if (items.length === 0) return "Pasta vazia.";
@@ -14,7 +9,7 @@ export function formatDriveItems(items: GraphDriveItem[]): string {
     const isFolder = !!item.folder;
     const icon = isFolder ? "[pasta]" : "[arquivo]";
     const size = item.size ? ` (${formatSize(item.size)})` : "";
-    const modified = new Date(item.lastModifiedDateTime).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
+    const modified = formatDateBR(item.lastModifiedDateTime);
     const childCount = item.folder?.childCount != null ? ` — ${item.folder.childCount} itens` : "";
     return `- ${icon} **${item.name}**${size}${childCount}\n  Modificado: ${modified}\n  ID: ${item.id}`;
   });

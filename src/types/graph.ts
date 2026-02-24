@@ -158,3 +158,11 @@ export function recipientAddresses(recipients?: GraphRecipient[]): string {
 export function messageSenderName(message: GraphChatMessage): string {
   return message.from?.user?.displayName ?? "Desconhecido";
 }
+
+export function toRecipient(email: string): GraphRecipient {
+  return { emailAddress: { address: email } };
+}
+
+export function toAttendee(email: string, type: string = "required") {
+  return { emailAddress: { address: email } as GraphEmailAddress, type };
+}

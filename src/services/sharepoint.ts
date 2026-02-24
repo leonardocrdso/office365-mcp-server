@@ -8,6 +8,7 @@ import type {
 } from "../types/graph.js";
 import { graphFetch } from "../utils/graph-client.js";
 import { SCOPES, DEFAULT_PAGE_SIZE_SMALL, DEFAULT_PAGE_SIZE_LARGE } from "../constants.js";
+import { createGetToken } from "../utils/auth-helper.js";
 
 export interface ListLibraryItemsParams {
   driveId: string;
@@ -16,9 +17,7 @@ export interface ListLibraryItemsParams {
 }
 
 export function createSharePointService(auth: AuthProvider) {
-  async function getToken() {
-    return auth.getAccessToken([...SCOPES.SHAREPOINT]);
-  }
+  const getToken = createGetToken(auth, SCOPES.SHAREPOINT);
 
   async function listSites(query?: string): Promise<GraphSite[]> {
     const token = await getToken();

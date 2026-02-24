@@ -4,6 +4,7 @@ import type {
   GraphFindMeetingTimesResponse,
   GraphPagedResponse,
 } from "../types/graph.js";
+import { toAttendee } from "../types/graph.js";
 import { graphFetch, graphFetchVoid } from "../utils/graph-client.js";
 import {
   SCOPES,
@@ -11,6 +12,7 @@ import {
   DEFAULT_TIMEZONE,
   DEFAULT_MEETING_DURATION_MINUTES,
 } from "../constants.js";
+import { createGetToken } from "../utils/auth-helper.js";
 
 export interface ListEventsParams {
   startDateTime: string;
@@ -47,9 +49,7 @@ export interface FindFreeSlotsParams {
 }
 
 export function createCalendarService(auth: AuthProvider) {
-  async function getToken() {
-    return auth.getAccessToken([...SCOPES.CALENDAR]);
-  }
+  const getToken = createGetToken(auth, SCOPES.CALENDAR);
 
   async function listEvents(params: ListEventsParams): Promise<GraphEvent[]> {
     const token = await getToken();
@@ -98,10 +98,7 @@ export function createCalendarService(auth: AuthProvider) {
       eventBody.location = { displayName: location };
     }
     if (attendees?.length) {
-      eventBody.attendees = attendees.map((email) => ({
-        emailAddress: { address: email },
-        type: "required",
-      }));
+      eventBody.attendees = attendees.map((email) => toAttendee(email));
     }
 
     return graphFetch<GraphEvent>(token, "/me/events", {
@@ -147,10 +144,7 @@ export function createCalendarService(auth: AuthProvider) {
     return graphFetch<GraphFindMeetingTimesResponse>(token, "/me/findMeetingTimes", {
       method: "POST",
       body: JSON.stringify({
-        attendees: attendees.map((email) => ({
-          emailAddress: { address: email },
-          type: "required",
-        })),
+        attendees: attendees.map((email) => toAttendee(email)),
         timeConstraint: {
           timeslots: [
             {

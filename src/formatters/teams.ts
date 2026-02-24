@@ -6,6 +6,7 @@ import type {
 } from "../types/graph.js";
 import { messageSenderName } from "../types/graph.js";
 import { MESSAGE_CONTENT_MAX_LENGTH } from "../constants.js";
+import { formatDateBR } from "../utils/date.js";
 
 export function formatTeamList(teams: GraphTeam[]): string {
   if (teams.length === 0) return "Nenhum time encontrado.";
@@ -33,7 +34,7 @@ export function formatChannelMessages(messages: GraphChatMessage[]): string {
 
   const formatted = messages.map((m) => {
     const from = messageSenderName(m);
-    const date = new Date(m.createdDateTime).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
+    const date = formatDateBR(m.createdDateTime);
     const content = m.body?.content?.substring(0, MESSAGE_CONTENT_MAX_LENGTH) ?? "";
     return `- **${from}** (${date})\n  ${content}`;
   });
@@ -48,7 +49,7 @@ export function formatChatList(chats: GraphChat[]): string {
     const topic = c.topic ?? "Chat sem título";
     const type = c.chatType ?? "unknown";
     const updated = c.lastUpdatedDateTime
-      ? new Date(c.lastUpdatedDateTime).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })
+      ? formatDateBR(c.lastUpdatedDateTime)
       : "N/A";
     const members =
       c.members?.map((m) => m.displayName).join(", ") ?? "";

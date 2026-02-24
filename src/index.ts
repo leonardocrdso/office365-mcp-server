@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import pkg from "../package.json";
 import { msalClient } from "./auth/msal-client.js";
 import { createMailService } from "./services/mail.js";
 import { createCalendarService } from "./services/calendar.js";
@@ -16,7 +17,7 @@ import { registerTeamsTools } from "./tools/teams-tools.js";
 
 const server = new McpServer({
   name: "office365-mcp-server",
-  version: "1.0.0",
+  version: pkg.version,
 });
 
 const mailService = createMailService(msalClient);
@@ -25,7 +26,7 @@ const oneDriveService = createOneDriveService(msalClient);
 const sharePointService = createSharePointService(msalClient);
 const teamsService = createTeamsService(msalClient);
 
-registerAuthTools(server);
+registerAuthTools(server, msalClient);
 registerMailTools(server, mailService);
 registerCalendarTools(server, calendarService);
 registerOneDriveTools(server, oneDriveService);

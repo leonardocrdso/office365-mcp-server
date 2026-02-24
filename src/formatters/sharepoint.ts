@@ -4,6 +4,7 @@ import type {
   GraphDriveItem,
   GraphSearchResponse,
 } from "../types/graph.js";
+import { formatSize } from "../utils/format.js";
 
 export function formatSiteList(sites: GraphSite[]): string {
   if (sites.length === 0) return "Nenhum site encontrado.";
@@ -44,7 +45,7 @@ export function formatLibraryItems(items: GraphDriveItem[]): string {
   const formatted = items.map((item) => {
     const isFolder = !!item.folder;
     const icon = isFolder ? "[pasta]" : "[arquivo]";
-    const size = item.size ? ` (${item.size} bytes)` : "";
+    const size = item.size ? ` (${formatSize(item.size)})` : "";
     return `- ${icon} **${item.name}**${size}\n  URL: ${item.webUrl}\n  ID: ${item.id}`;
   });
 

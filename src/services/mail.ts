@@ -4,8 +4,10 @@ import type {
   GraphMailFolder,
   GraphPagedResponse,
 } from "../types/graph.js";
+import { toRecipient } from "../types/graph.js";
 import { graphFetch, graphFetchVoid } from "../utils/graph-client.js";
 import { SCOPES, DEFAULT_PAGE_SIZE_SMALL } from "../constants.js";
+import { createGetToken } from "../utils/auth-helper.js";
 
 export interface ListEmailsParams {
   folder?: string;
@@ -24,9 +26,7 @@ export interface SendEmailParams {
 }
 
 export function createMailService(auth: AuthProvider) {
-  async function getToken() {
-    return auth.getAccessToken([...SCOPES.MAIL]);
-  }
+  const getToken = createGetToken(auth, SCOPES.MAIL);
 
   async function listEmails(params: ListEmailsParams = {}): Promise<GraphEmailMessage[]> {
     const token = await getToken();
@@ -78,15 +78,9 @@ export function createMailService(auth: AuthProvider) {
     const token = await getToken();
     const { to, subject, body, cc, bcc, contentType = "Text" } = params;
 
-    const toRecipients = to.map((email) => ({
-      emailAddress: { address: email },
-    }));
-    const ccRecipients = cc?.map((email) => ({
-      emailAddress: { address: email },
-    }));
-    const bccRecipients = bcc?.map((email) => ({
-      emailAddress: { address: email },
-    }));
+    const toRecipients = to.map(toRecipient);
+    const ccRecipients = cc?.map(toRecipient);
+    const bccRecipients = bcc?.map(toRecipient);
 
     await graphFetchVoid(token, "/me/sendMail", {
       method: "POST",

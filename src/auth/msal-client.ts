@@ -5,19 +5,17 @@ import {
   type AccountInfo,
   type SilentFlowRequest,
 } from "@azure/msal-node";
-import { readFile, writeFile, unlink } from "node:fs/promises";
-import { homedir } from "node:os";
-import { join } from "node:path";
 import type { AuthProvider } from "../types/auth.js";
 import { SCOPES } from "../constants.js";
 import { AuthError, ErrorCode } from "../utils/errors.js";
-
-const TOKEN_CACHE_PATH = join(homedir(), ".office365-mcp-tokens.json");
+import { loadConfig } from "./config-manager.js";
+import { loadTokenCache, saveTokenCache, removeTokenCache } from "./token-cache-manager.js";
 
 const ALL_SCOPES = ["User.Read", ...Object.values(SCOPES).flat()];
 
 export class MsalClient implements AuthProvider {
   private pca: PublicClientApplication | null = null;
+  private fileConfig: { clientId?: string; tenantId?: string } | null = null;
   private deviceCodeCallback: ((message: string) => void) | null = null;
   private pendingLogin: Promise<void> | null = null;
 
@@ -25,8 +23,13 @@ export class MsalClient implements AuthProvider {
     this.deviceCodeCallback = callback;
   }
 
+  resetPca(): void {
+    this.pca = null;
+    this.fileConfig = null;
+  }
+
   private getConfig(): Configuration {
-    const clientId = process.env.AZURE_CLIENT_ID;
+    const clientId = process.env.AZURE_CLIENT_ID ?? this.fileConfig?.clientId;
     if (!clientId) {
       throw new AuthError(
         "AZURE_CLIENT_ID não configurado.",
@@ -34,7 +37,7 @@ export class MsalClient implements AuthProvider {
       );
     }
 
-    const tenantId = process.env.AZURE_TENANT_ID || "common";
+    const tenantId = process.env.AZURE_TENANT_ID ?? this.fileConfig?.tenantId ?? "common";
 
     return {
       auth: {
@@ -46,11 +49,16 @@ export class MsalClient implements AuthProvider {
 
   private async getPca(): Promise<PublicClientApplication> {
     if (!this.pca) {
+      if (!this.fileConfig) {
+        this.fileConfig = await loadConfig();
+      }
       this.pca = new PublicClientApplication(this.getConfig());
 
       try {
-        const cacheData = await readFile(TOKEN_CACHE_PATH, "utf-8");
-        this.pca.getTokenCache().deserialize(cacheData);
+        const cacheData = await loadTokenCache();
+        if (cacheData) {
+          this.pca.getTokenCache().deserialize(cacheData);
+        }
       } catch (error) {
         console.error("Failed to load token cache:", error);
       }
@@ -61,7 +69,7 @@ export class MsalClient implements AuthProvider {
   private async saveCache(): Promise<void> {
     if (!this.pca) return;
     const cacheData = this.pca.getTokenCache().serialize();
-    await writeFile(TOKEN_CACHE_PATH, cacheData, { mode: 0o600 });
+    await saveTokenCache(cacheData);
   }
 
   async login(): Promise<{ userCode: string; verificationUri: string; message: string }> {
@@ -153,11 +161,7 @@ export class MsalClient implements AuthProvider {
         await this.pca.getTokenCache().removeAccount(account as AccountInfo);
       }
     }
-    try {
-      await unlink(TOKEN_CACHE_PATH);
-    } catch (error) {
-      console.error("Failed to remove token cache file:", error);
-    }
+    await removeTokenCache();
     this.pca = null;
   }
 }

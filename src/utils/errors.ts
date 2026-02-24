@@ -104,7 +104,7 @@ const GRAPH_CODE_MAP: Record<string, ErrorCode> = {
 
 const ERROR_MESSAGES: Record<ErrorCode, string> = {
   [ErrorCode.AUTH_NOT_CONFIGURED]:
-    "AZURE_CLIENT_ID não configurado. Defina a variável de ambiente AZURE_CLIENT_ID com o ID do seu app registration no Azure AD.",
+    "AZURE_CLIENT_ID não configurado. Use a tool 'configure' para informar suas credenciais Azure, ou defina a variável de ambiente AZURE_CLIENT_ID.",
   [ErrorCode.AUTH_NOT_AUTHENTICATED]:
     "Usuário não autenticado. Use a tool 'login' para iniciar a autenticação.",
   [ErrorCode.AUTH_TOKEN_EXPIRED]:
