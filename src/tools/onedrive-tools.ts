@@ -9,6 +9,10 @@ import {
   formatShareLink,
 } from "../formatters/onedrive.js";
 
+function formatFileContent(content: unknown): string {
+  return typeof content === "string" ? content : JSON.stringify(content, null, 2);
+}
+
 export function registerOneDriveTools(server: McpServer, onedrive: OneDriveService) {
   server.tool(
     "list-drive-files",
@@ -35,12 +39,23 @@ export function registerOneDriveTools(server: McpServer, onedrive: OneDriveServi
     safeTool(async (params) => {
       const content = await onedrive.readFileContent(params.itemId);
       return {
-        content: [
-          {
-            type: "text" as const,
-            text: typeof content === "string" ? content : JSON.stringify(content, null, 2),
-          },
-        ],
+        content: [{ type: "text" as const, text: formatFileContent(content) }],
+      };
+    })
+  );
+
+  server.tool(
+    "read-shared-file-content",
+    "Lê o conteúdo de um arquivo de um drive compartilhado (SharePoint ou OneDrive de outro usuário). Use o driveId e itemId retornados por search-sharepoint ou list-library-items.",
+    {
+      driveId: z.string().describe("ID do drive compartilhado"),
+      itemId: z.string().optional().describe("ID do arquivo no drive compartilhado"),
+      path: z.string().optional().describe("Caminho do arquivo no drive (alternativa ao itemId, ex: 'Documents/pasta/arquivo.docx')"),
+    },
+    safeTool(async (params) => {
+      const content = await onedrive.readSharedFileContent(params);
+      return {
+        content: [{ type: "text" as const, text: formatFileContent(content) }],
       };
     })
   );

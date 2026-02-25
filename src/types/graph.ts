@@ -74,7 +74,7 @@ export interface GraphDriveItem {
   folder?: { childCount: number };
   file?: { mimeType: string };
   webUrl: string;
-  parentReference?: { path?: string };
+  parentReference?: { path?: string; driveId?: string; siteId?: string };
 }
 
 export interface GraphSharingLink {
@@ -98,10 +98,26 @@ export interface GraphDrive {
   description?: string;
 }
 
+export interface GraphSearchHitResource {
+  "@odata.type"?: string;
+  id?: string;
+  name?: string;
+  displayName?: string;
+  webUrl?: string;
+  lastModifiedDateTime?: string;
+  lastModifiedBy?: { user?: { displayName?: string } };
+  parentReference?: {
+    driveId?: string;
+    siteId?: string;
+  };
+  size?: number;
+}
+
 export interface GraphSearchHit {
   hitId: string;
+  rank?: number;
   summary?: string;
-  resource: { name?: string; webUrl?: string };
+  resource: GraphSearchHitResource;
 }
 
 export interface GraphSearchHitsContainer {

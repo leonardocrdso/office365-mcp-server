@@ -1,13 +1,13 @@
 import type { GraphEvent, GraphFindMeetingTimesResponse } from "../types/graph.js";
 import { recipientAddress } from "../types/graph.js";
-import { formatDateBR } from "../utils/date.js";
+import { formatCalendarDate } from "../utils/date.js";
 
 export function formatEventList(events: GraphEvent[]): string {
   if (events.length === 0) return "Nenhum evento encontrado no período.";
 
   const formatted = events.map((e) => {
-    const start = formatDateBR(e.start.dateTime);
-    const end = formatDateBR(e.end.dateTime);
+    const start = formatCalendarDate(e.start.dateTime);
+    const end = formatCalendarDate(e.end.dateTime);
     const location = e.location?.displayName ? ` @ ${e.location.displayName}` : "";
     const online = e.isOnlineMeeting ? " [Online]" : "";
     const attendees = e.attendees?.length
@@ -36,8 +36,8 @@ export function formatFreeSlotsResult(result: GraphFindMeetingTimesResponse): st
   }
 
   const formatted = suggestions.map((s, i) => {
-    const start = formatDateBR(s.meetingTimeSlot.start.dateTime);
-    const end = formatDateBR(s.meetingTimeSlot.end.dateTime);
+    const start = formatCalendarDate(s.meetingTimeSlot.start.dateTime);
+    const end = formatCalendarDate(s.meetingTimeSlot.end.dateTime);
     return `${i + 1}. ${start} → ${end} (confiança: ${s.confidence}%)`;
   });
 

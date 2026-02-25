@@ -71,7 +71,7 @@ export function registerSharePointTools(server: McpServer, sharepoint: SharePoin
 
   server.tool(
     "search-sharepoint",
-    "Busca conteúdo no SharePoint (documentos, listas, sites).",
+    "Busca conteúdo no SharePoint (documentos, listas, sites). Para arquivos (driveItem), retorna driveId e itemId que podem ser usados com read-shared-file-content.",
     {
       query: z.string().describe("Texto para buscar"),
     },

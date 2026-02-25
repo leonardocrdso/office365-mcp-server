@@ -19,6 +19,12 @@ export interface UploadFileParams {
   content: string;
 }
 
+export interface ReadSharedFileParams {
+  driveId: string;
+  itemId?: string;
+  path?: string;
+}
+
 export interface ShareFileParams {
   itemId: string;
   type?: "view" | "edit";
@@ -56,6 +62,22 @@ export function createOneDriveService(auth: AuthProvider) {
   async function readFileContent(itemId: string): Promise<string> {
     const token = await getToken();
     return graphFetch<string>(token, `/me/drive/items/${itemId}/content`);
+  }
+
+  async function readSharedFileContent(params: ReadSharedFileParams): Promise<string> {
+    const token = await getToken();
+    const { driveId, itemId, path } = params;
+
+    let endpoint: string;
+    if (itemId) {
+      endpoint = `/drives/${driveId}/items/${itemId}/content`;
+    } else if (path) {
+      endpoint = `/drives/${driveId}/root:/${path.replace(/^\//, "")}:/content`;
+    } else {
+      throw new Error("É necessário informar itemId ou path do arquivo.");
+    }
+
+    return graphFetch<string>(token, endpoint);
   }
 
   async function uploadFile(params: UploadFileParams): Promise<GraphDriveItem> {
@@ -97,7 +119,7 @@ export function createOneDriveService(auth: AuthProvider) {
     });
   }
 
-  return { listFiles, readFileContent, uploadFile, searchFiles, shareFile };
+  return { listFiles, readFileContent, readSharedFileContent, uploadFile, searchFiles, shareFile };
 }
 
 export type OneDriveService = ReturnType<typeof createOneDriveService>;

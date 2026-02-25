@@ -11,6 +11,7 @@ import {
   DEFAULT_PAGE_SIZE_LARGE,
   DEFAULT_TIMEZONE,
   DEFAULT_MEETING_DURATION_MINUTES,
+  PREFER_TIMEZONE_HEADER,
 } from "../constants.js";
 import { createGetToken } from "../utils/auth-helper.js";
 
@@ -66,7 +67,12 @@ export function createCalendarService(auth: AuthProvider) {
 
     const result = await graphFetch<GraphPagedResponse<GraphEvent>>(
       token,
-      `/me/calendarView?${queryParams}`
+      `/me/calendarView?${queryParams}`,
+      {
+        headers: {
+          Prefer: PREFER_TIMEZONE_HEADER,
+        },
+      }
     );
     return result.value;
   }
@@ -143,6 +149,9 @@ export function createCalendarService(auth: AuthProvider) {
 
     return graphFetch<GraphFindMeetingTimesResponse>(token, "/me/findMeetingTimes", {
       method: "POST",
+      headers: {
+        Prefer: PREFER_TIMEZONE_HEADER,
+      },
       body: JSON.stringify({
         attendees: attendees.map((email) => toAttendee(email)),
         timeConstraint: {

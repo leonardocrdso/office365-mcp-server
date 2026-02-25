@@ -2,6 +2,7 @@ export const DEFAULT_PAGE_SIZE_SMALL = 10;
 export const DEFAULT_PAGE_SIZE_LARGE = 20;
 export const DEFAULT_MEETING_DURATION_MINUTES = 30;
 export const DEFAULT_TIMEZONE = "America/Sao_Paulo";
+export const PREFER_TIMEZONE_HEADER = `outlook.timezone="${DEFAULT_TIMEZONE}"`;
 export const BODY_PREVIEW_MAX_LENGTH = 100;
 export const MESSAGE_CONTENT_MAX_LENGTH = 200;
 
