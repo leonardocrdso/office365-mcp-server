@@ -59,8 +59,9 @@ Add to your MCP client settings:
 
 | Tool | Description |
 |------|-------------|
+| `configure` | Set Azure credentials (Client ID and Tenant ID) — saved to persistent storage |
 | `login` | Start Device Code Flow authentication — returns a code and URL |
-| `auth-status` | Check authentication status and show logged-in user info |
+| `auth-status` | Check authentication status, logged-in user info and active storage path |
 | `logout` | Sign out and remove cached tokens |
 
 ### Mail
@@ -121,6 +122,40 @@ Add to your MCP client settings:
 |----------|----------|---------|-------------|
 | `AZURE_CLIENT_ID` | Yes | — | App registration client ID |
 | `AZURE_TENANT_ID` | No | `common` | Tenant ID or `common` for multi-tenant |
+| `OFFICE365_MCP_HOME` | No | `~/` | Directory for isolated config and token storage |
+
+### Isolated storage (multi-agent)
+
+When `OFFICE365_MCP_HOME` is set, config and token cache are stored inside that directory (`config.json` and `tokens.json`). The directory is created automatically if it doesn't exist.
+
+This allows running multiple isolated instances of the server — for example, one per agent in an orchestrator like OpenClaw — without auth leaking between them:
+
+```json
+{
+  "mcpServers": {
+    "office365-agent-a": {
+      "command": "npx",
+      "args": ["@leonardocrdso/office365-mcp-server"],
+      "env": {
+        "AZURE_CLIENT_ID": "your-client-id",
+        "AZURE_TENANT_ID": "your-tenant-id",
+        "OFFICE365_MCP_HOME": "/path/to/agents/agent-a/office365"
+      }
+    },
+    "office365-agent-b": {
+      "command": "npx",
+      "args": ["@leonardocrdso/office365-mcp-server"],
+      "env": {
+        "AZURE_CLIENT_ID": "your-client-id",
+        "AZURE_TENANT_ID": "your-tenant-id",
+        "OFFICE365_MCP_HOME": "/path/to/agents/agent-b/office365"
+      }
+    }
+  }
+}
+```
+
+Without `OFFICE365_MCP_HOME`, storage falls back to `~/.office365-mcp-config.json` and `~/.office365-mcp-tokens.json` (default behavior, unchanged).
 
 ## Development
 
