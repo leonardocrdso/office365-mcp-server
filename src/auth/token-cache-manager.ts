@@ -1,25 +1,24 @@
 import { readFile, writeFile, unlink } from "node:fs/promises";
-import { homedir } from "node:os";
-import { join } from "node:path";
-
-export const TOKEN_CACHE_PATH = join(homedir(), ".office365-mcp-tokens.json");
+import { resolveStoragePaths, ensureStorageDir } from "./storage.js";
 
 export async function loadTokenCache(): Promise<string | null> {
+  const { tokensPath } = resolveStoragePaths();
   try {
-    return await readFile(TOKEN_CACHE_PATH, "utf-8");
+    return await readFile(tokensPath, "utf-8");
   } catch {
     return null;
   }
 }
 
 export async function saveTokenCache(data: string): Promise<void> {
-  await writeFile(TOKEN_CACHE_PATH, data, { mode: 0o600 });
+  await ensureStorageDir();
+  const { tokensPath } = resolveStoragePaths();
+  await writeFile(tokensPath, data, { mode: 0o600 });
 }
 
 export async function removeTokenCache(): Promise<void> {
+  const { tokensPath } = resolveStoragePaths();
   try {
-    await unlink(TOKEN_CACHE_PATH);
-  } catch {
-    // file may not exist
-  }
+    await unlink(tokensPath);
+  } catch {}
 }

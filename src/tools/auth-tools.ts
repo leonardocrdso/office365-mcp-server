@@ -2,18 +2,19 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { MsalClient } from "../auth/msal-client.js";
 import { saveConfig } from "../auth/config-manager.js";
+import { resolveStoragePaths } from "../auth/storage.js";
 import { safeTool } from "../utils/safe-tool.js";
 
 export function registerAuthTools(server: McpServer, auth: MsalClient) {
   server.tool(
     "configure",
-    "Configura as credenciais do Azure (Client ID e Tenant ID) para autenticação com Microsoft 365. Salva em arquivo persistente (~/.office365-mcp-config.json).",
+    "Configura as credenciais do Azure (Client ID e Tenant ID) para autenticação com Microsoft 365. Salva em arquivo persistente no storage configurado.",
     {
       clientId: z.string().describe("Azure App Registration Client ID"),
       tenantId: z.string().optional().default("common").describe("Azure Tenant ID (padrão: 'common')"),
     },
     safeTool(async (params) => {
-      await saveConfig(params.clientId, params.tenantId);
+      const savedPath = await saveConfig(params.clientId, params.tenantId);
       auth.resetPca();
       return {
         content: [
@@ -25,7 +26,7 @@ export function registerAuthTools(server: McpServer, auth: MsalClient) {
               `**Client ID:** \`${params.clientId}\``,
               `**Tenant ID:** \`${params.tenantId}\``,
               "",
-              "As credenciais foram salvas em `~/.office365-mcp-config.json`.",
+              `As credenciais foram salvas em \`${savedPath}\`.`,
               "Agora use a tool **'login'** para autenticar com sua conta Microsoft.",
             ].join("\n"),
           },
@@ -80,6 +81,10 @@ export function registerAuthTools(server: McpServer, auth: MsalClient) {
       }
 
       const account = info.account!;
+      const { baseDir, configPath } = resolveStoragePaths();
+      const storageInfo = baseDir
+        ? `\`${baseDir}\` (isolado via OFFICE365_MCP_HOME)`
+        : `\`${configPath}\` (storage padrão)`;
       return {
         content: [
           {
@@ -90,6 +95,7 @@ export function registerAuthTools(server: McpServer, auth: MsalClient) {
               `**Nome:** ${account.name ?? "N/A"}`,
               `**Email:** ${account.username}`,
               `**Tenant:** ${account.tenantId}`,
+              `**Storage:** ${storageInfo}`,
             ].join("\n"),
           },
         ],
