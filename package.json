@@ -1,6 +1,6 @@
 {
   "name": "@leonardocrdso/office365-mcp-server",
-  "version": "1.1.2",
+  "version": "1.2.0",
   "description": "MCP server for Microsoft 365 — Outlook, Calendar, OneDrive, SharePoint & Teams via Graph API",
   "type": "module",
   "main": "build/index.js",
