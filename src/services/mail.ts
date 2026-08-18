@@ -66,11 +66,15 @@ export function createMailService(auth: AuthProvider) {
     return result.value;
   }
 
-  async function readEmail(messageId: string): Promise<GraphEmailMessage> {
+  async function readEmail(
+    messageId: string,
+    format: "text" | "html" = "text"
+  ): Promise<GraphEmailMessage> {
     const token = await getToken();
     return graphFetch<GraphEmailMessage>(
       token,
-      `/me/messages/${messageId}?$select=id,subject,from,toRecipients,ccRecipients,receivedDateTime,body,hasAttachments,attachments`
+      `/me/messages/${messageId}?$select=id,subject,from,toRecipients,ccRecipients,receivedDateTime,body,hasAttachments,attachments`,
+      { headers: { Prefer: `outlook.body-content-type="${format}"` } }
     );
   }
 

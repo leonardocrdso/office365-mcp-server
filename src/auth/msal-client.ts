@@ -15,9 +15,11 @@ const ALL_SCOPES = ["User.Read", ...Object.values(SCOPES).flat()];
 
 export class MsalClient implements AuthProvider {
   private pca: PublicClientApplication | null = null;
+  private pcaPromise: Promise<PublicClientApplication> | null = null;
   private fileConfig: { clientId?: string; tenantId?: string } | null = null;
   private deviceCodeCallback: ((message: string) => void) | null = null;
   private pendingLogin: Promise<void> | null = null;
+  private lastCacheSnapshot: string | null = null;
 
   setDeviceCodeCallback(callback: (message: string) => void) {
     this.deviceCodeCallback = callback;
@@ -25,7 +27,9 @@ export class MsalClient implements AuthProvider {
 
   resetPca(): void {
     this.pca = null;
+    this.pcaPromise = null;
     this.fileConfig = null;
+    this.lastCacheSnapshot = null;
   }
 
   private getConfig(): Configuration {
@@ -48,27 +52,37 @@ export class MsalClient implements AuthProvider {
   }
 
   private async getPca(): Promise<PublicClientApplication> {
-    if (!this.pca) {
-      if (!this.fileConfig) {
-        this.fileConfig = await loadConfig();
-      }
-      this.pca = new PublicClientApplication(this.getConfig());
+    if (this.pca) return this.pca;
+    this.pcaPromise ??= this.initPca().catch((error) => {
+      this.pcaPromise = null;
+      throw error;
+    });
+    return this.pcaPromise;
+  }
 
-      try {
-        const cacheData = await loadTokenCache();
-        if (cacheData) {
-          this.pca.getTokenCache().deserialize(cacheData);
-        }
-      } catch (error) {
-        console.error("Failed to load token cache:", error);
-      }
+  private async initPca(): Promise<PublicClientApplication> {
+    if (!this.fileConfig) {
+      this.fileConfig = await loadConfig();
     }
-    return this.pca;
+    const pca = new PublicClientApplication(this.getConfig());
+    try {
+      const cacheData = await loadTokenCache();
+      if (cacheData) {
+        pca.getTokenCache().deserialize(cacheData);
+        this.lastCacheSnapshot = pca.getTokenCache().serialize();
+      }
+    } catch (error) {
+      console.error("Failed to load token cache:", error);
+    }
+    this.pca = pca;
+    return pca;
   }
 
   private async saveCache(): Promise<void> {
     if (!this.pca) return;
     const cacheData = this.pca.getTokenCache().serialize();
+    if (cacheData === this.lastCacheSnapshot) return;
+    this.lastCacheSnapshot = cacheData;
     await saveTokenCache(cacheData);
   }
 
@@ -163,6 +177,8 @@ export class MsalClient implements AuthProvider {
     }
     await removeTokenCache();
     this.pca = null;
+    this.pcaPromise = null;
+    this.lastCacheSnapshot = null;
   }
 }
 

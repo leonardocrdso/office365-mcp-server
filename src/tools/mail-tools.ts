@@ -31,7 +31,7 @@ export function registerMailTools(server: McpServer, mail: MailService) {
     "search-emails",
     "Busca emails por texto (KQL). Pesquisa no assunto, corpo e remetente.",
     {
-      query: z.string().describe("Texto para buscar nos emails"),
+      query: z.string().min(1).describe("Texto para buscar nos emails"),
       top: z.number().optional().describe("Número máximo de resultados (padrão: 10)"),
     },
     safeTool(async (params) => {
@@ -47,9 +47,10 @@ export function registerMailTools(server: McpServer, mail: MailService) {
     "Lê o conteúdo completo de um email pelo ID.",
     {
       messageId: z.string().describe("ID do email a ser lido"),
+      format: z.enum(["text", "html"]).optional().default("text").describe("Formato do corpo: 'text' (padrão, mais leve) ou 'html'"),
     },
     safeTool(async (params) => {
-      const email = await mail.readEmail(params.messageId);
+      const email = await mail.readEmail(params.messageId, params.format);
       return {
         content: [{ type: "text" as const, text: formatEmailDetail(email) }],
       };
