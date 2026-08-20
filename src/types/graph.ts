@@ -16,6 +16,7 @@ export interface GraphAttachment {
 
 export interface GraphEmailMessage {
   id: string;
+  conversationId?: string;
   subject: string;
   from: GraphRecipient;
   toRecipients: GraphRecipient[];

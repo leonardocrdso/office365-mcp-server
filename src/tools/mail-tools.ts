@@ -21,23 +21,25 @@ export function registerMailTools(server: McpServer, mail: MailService) {
     },
     safeTool(async (params) => {
       const emails = await mail.listEmails(params);
+      const aliased = emails.map(e => ({ ...e, id: mail.registerAlias(e.id) }));
       return {
-        content: [{ type: "text" as const, text: formatEmailList(emails) }],
+        content: [{ type: "text" as const, text: formatEmailList(aliased) }],
       };
     })
   );
 
   server.tool(
     "search-emails",
-    "Busca emails por texto (KQL). Pesquisa no assunto, corpo e remetente.",
+    "Busca emails por texto (KQL). Pesquisa no assunto, corpo e remetente. Agrupa por thread (conversationId) e retorna a mensagem mais recente de cada.",
     {
       query: z.string().min(1).describe("Texto para buscar nos emails"),
-      top: z.number().optional().describe("Número máximo de resultados (padrão: 10)"),
+      top: z.number().optional().describe("Número máximo de threads a retornar (padrão: 10)"),
     },
     safeTool(async (params) => {
       const emails = await mail.searchEmails(params.query, params.top);
+      const aliased = emails.map(e => ({ ...e, id: mail.registerAlias(e.id) }));
       return {
-        content: [{ type: "text" as const, text: formatEmailSearchResults(params.query, emails) }],
+        content: [{ type: "text" as const, text: formatEmailSearchResults(params.query, aliased) }],
       };
     })
   );
@@ -46,13 +48,14 @@ export function registerMailTools(server: McpServer, mail: MailService) {
     "read-email",
     "Lê o conteúdo completo de um email pelo ID.",
     {
-      messageId: z.string().describe("ID do email a ser lido"),
+      messageId: z.string().describe("ID do email (aceita alias curto ex: m1)"),
       format: z.enum(["text", "html"]).optional().default("text").describe("Formato do corpo: 'text' (padrão, mais leve) ou 'html'"),
+      maxBodyLength: z.number().optional().describe("Truncar corpo após N caracteres (omitir = sem limite)"),
     },
     safeTool(async (params) => {
-      const email = await mail.readEmail(params.messageId, params.format);
+      const email = await mail.readEmail(mail.resolveId(params.messageId), params.format);
       return {
-        content: [{ type: "text" as const, text: formatEmailDetail(email) }],
+        content: [{ type: "text" as const, text: formatEmailDetail(email, params.maxBodyLength) }],
       };
     })
   );
@@ -89,7 +92,7 @@ export function registerMailTools(server: McpServer, mail: MailService) {
       comment: z.string().describe("Texto da resposta"),
     },
     safeTool(async (params) => {
-      await mail.replyEmail(params.messageId, params.comment);
+      await mail.replyEmail(mail.resolveId(params.messageId), params.comment);
       return {
         content: [
           { type: "text" as const, text: "Resposta enviada com sucesso." },

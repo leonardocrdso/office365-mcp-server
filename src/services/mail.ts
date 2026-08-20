@@ -27,6 +27,22 @@ export interface SendEmailParams {
 
 export function createMailService(auth: AuthProvider) {
   const getToken = createGetToken(auth, SCOPES.MAIL);
+  const aliasToId = new Map<string, string>();
+  const idToAlias = new Map<string, string>();
+  let aliasCounter = 0;
+
+  function registerAlias(realId: string): string {
+    const existing = idToAlias.get(realId);
+    if (existing) return existing;
+    const alias = `m${++aliasCounter}`;
+    aliasToId.set(alias, realId);
+    idToAlias.set(realId, alias);
+    return alias;
+  }
+
+  function resolveId(idOrAlias: string): string {
+    return aliasToId.get(idOrAlias) ?? idOrAlias;
+  }
 
   async function listEmails(params: ListEmailsParams = {}): Promise<GraphEmailMessage[]> {
     const token = await getToken();
@@ -55,15 +71,15 @@ export function createMailService(auth: AuthProvider) {
     const token = await getToken();
     const queryParams = new URLSearchParams({
       $search: `"${query}"`,
-      $top: String(top),
-      $select: "id,subject,from,toRecipients,receivedDateTime,isRead,hasAttachments,bodyPreview",
+      $top: String(top * 3),
+      $select: "id,conversationId,subject,from,toRecipients,receivedDateTime,isRead,hasAttachments,bodyPreview",
     });
 
     const result = await graphFetch<GraphPagedResponse<GraphEmailMessage>>(
       token,
       `/me/messages?${queryParams}`
     );
-    return result.value;
+    return deduplicateByConversation(result.value, top);
   }
 
   async function readEmail(
@@ -126,7 +142,24 @@ export function createMailService(auth: AuthProvider) {
     return result.value;
   }
 
-  return { listEmails, searchEmails, readEmail, sendEmail, replyEmail, listMailFolders };
+  return { listEmails, searchEmails, readEmail, sendEmail, replyEmail, listMailFolders, registerAlias, resolveId };
+}
+
+function deduplicateByConversation(
+  messages: readonly GraphEmailMessage[],
+  limit: number
+): GraphEmailMessage[] {
+  const byConversation = new Map<string, GraphEmailMessage>();
+  for (const msg of messages) {
+    const key = msg.conversationId ?? msg.id;
+    const existing = byConversation.get(key);
+    if (!existing || msg.receivedDateTime > existing.receivedDateTime) {
+      byConversation.set(key, msg);
+    }
+  }
+  return [...byConversation.values()]
+    .sort((a, b) => b.receivedDateTime.localeCompare(a.receivedDateTime))
+    .slice(0, limit);
 }
 
 export type MailService = ReturnType<typeof createMailService>;

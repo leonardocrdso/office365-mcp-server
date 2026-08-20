@@ -32,12 +32,15 @@ export function formatEmailSearchResults(
   return `## Resultados da busca "${query}" (${formatted.length})\n\n${formatted.join("\n\n")}`;
 }
 
-export function formatEmailDetail(email: GraphEmailMessage): string {
+export function formatEmailDetail(email: GraphEmailMessage, maxBodyLength?: number): string {
   const from = recipientAddress(email.from);
   const to = recipientAddresses(email.toRecipients);
   const cc = recipientAddresses(email.ccRecipients);
   const date = formatDateBR(email.receivedDateTime);
-  const bodyContent = email.body?.content ?? "(sem conteúdo)";
+  const rawBody = email.body?.content ?? "(sem conteúdo)";
+  const bodyContent = maxBodyLength && rawBody.length > maxBodyLength
+    ? `${rawBody.substring(0, maxBodyLength)}\n[truncado, corpo completo: ${rawBody.length} chars]`
+    : rawBody;
 
   const text = [
     `## ${email.subject}`,
