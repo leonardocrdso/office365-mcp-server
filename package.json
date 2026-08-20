@@ -1,6 +1,6 @@
 {
   "name": "@leonardocrdso/office365-mcp-server",
-  "version": "1.2.3",
+  "version": "1.3.0",
   "description": "MCP server for Microsoft 365 — Outlook, Calendar, OneDrive, SharePoint & Teams via Graph API",
   "type": "module",
   "main": "build/index.js",
@@ -48,6 +48,8 @@
   "dependencies": {
     "@azure/msal-node": "^3.8.8",
     "@modelcontextprotocol/sdk": "^1.26.0",
+    "mammoth": "^1.12.1",
+    "unpdf": "^1.8.1",
     "zod": "^3.25.0"
   },
   "devDependencies": {

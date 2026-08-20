@@ -7,11 +7,8 @@ import {
   formatFileSearchResults,
   formatUploadResult,
   formatShareLink,
+  formatExtractResult,
 } from "../formatters/onedrive.js";
-
-function formatFileContent(content: unknown): string {
-  return typeof content === "string" ? content : JSON.stringify(content, null, 2);
-}
 
 export function registerOneDriveTools(server: McpServer, onedrive: OneDriveService) {
   server.tool(
@@ -32,30 +29,68 @@ export function registerOneDriveTools(server: McpServer, onedrive: OneDriveServi
 
   server.tool(
     "read-file-content",
-    "Lê o conteúdo de um arquivo de texto do OneDrive.",
+    "Lê o conteúdo de um arquivo do OneDrive. Suporta PDF (extração de texto com paginação), DOCX e arquivos de texto.",
     {
       itemId: z.string().describe("ID do arquivo no OneDrive"),
+      fileName: z.string().describe("Nome do arquivo com extensão (ex: 'relatorio.pdf')"),
+      startPage: z.number().optional().default(1).describe("Página inicial para PDF (padrão: 1)"),
+      maxPages: z.number().optional().describe("Máximo de páginas a extrair do PDF (omitir = todas)"),
     },
     safeTool(async (params) => {
-      const content = await onedrive.readFileContent(params.itemId);
+      const result = await onedrive.readFileContent(params.itemId, {
+        fileName: params.fileName,
+        startPage: params.startPage,
+        maxPages: params.maxPages,
+      });
       return {
-        content: [{ type: "text" as const, text: formatFileContent(content) }],
+        content: [{ type: "text" as const, text: formatExtractResult(params.fileName, result) }],
       };
     })
   );
 
   server.tool(
     "read-shared-file-content",
-    "Lê o conteúdo de um arquivo de um drive compartilhado (SharePoint ou OneDrive de outro usuário). Use o driveId e itemId retornados por search-sharepoint ou list-library-items.",
+    "Lê o conteúdo de um arquivo de um drive compartilhado (SharePoint ou OneDrive de outro usuário). Suporta PDF, DOCX e texto.",
     {
       driveId: z.string().describe("ID do drive compartilhado"),
       itemId: z.string().optional().describe("ID do arquivo no drive compartilhado"),
-      path: z.string().optional().describe("Caminho do arquivo no drive (alternativa ao itemId, ex: 'Documents/pasta/arquivo.docx')"),
+      path: z.string().optional().describe("Caminho do arquivo no drive (alternativa ao itemId)"),
+      fileName: z.string().describe("Nome do arquivo com extensão (ex: 'contrato.pdf')"),
+      startPage: z.number().optional().default(1).describe("Página inicial para PDF (padrão: 1)"),
+      maxPages: z.number().optional().describe("Máximo de páginas a extrair do PDF (omitir = todas)"),
     },
     safeTool(async (params) => {
-      const content = await onedrive.readSharedFileContent(params);
+      const endpoint = onedrive.buildSharedContentEndpoint(params.driveId, params.itemId, params.path);
+      const result = await onedrive.readSharedFileContent(params.driveId, endpoint, {
+        fileName: params.fileName,
+        startPage: params.startPage,
+        maxPages: params.maxPages,
+      });
       return {
-        content: [{ type: "text" as const, text: formatFileContent(content) }],
+        content: [{ type: "text" as const, text: formatExtractResult(params.fileName, result) }],
+      };
+    })
+  );
+
+  server.tool(
+    "resolve-share-link",
+    "Resolve uma URL de compartilhamento do SharePoint/OneDrive e retorna driveId + itemId para uso em read-shared-file-content.",
+    {
+      shareUrl: z.string().url().describe("URL de compartilhamento do SharePoint ou OneDrive"),
+    },
+    safeTool(async (params) => {
+      const resolved = await onedrive.resolveShareLink(params.shareUrl);
+      const lines = [
+        "## Link resolvido",
+        "",
+        `**Arquivo:** ${resolved.name}`,
+        `**Drive ID:** ${resolved.driveId}`,
+        `**Item ID:** ${resolved.itemId}`,
+      ];
+      if (resolved.webUrl) lines.push(`**URL:** ${resolved.webUrl}`);
+      lines.push("", "Use estes IDs com `read-shared-file-content` para ler o conteúdo.");
+      return {
+        content: [{ type: "text" as const, text: lines.join("\n") }],
       };
     })
   );

@@ -1,4 +1,5 @@
 import type { GraphDriveItem, GraphSharingLink } from "../types/graph.js";
+import type { ExtractResult } from "../utils/content-extractor.js";
 import { formatDateBR } from "../utils/date.js";
 import { formatSize } from "../utils/format.js";
 
@@ -39,4 +40,14 @@ export function formatUploadResult(item: GraphDriveItem): string {
 export function formatShareLink(result: GraphSharingLink): string {
   const link = result.link;
   return `Link criado!\n\n**URL:** ${link?.webUrl}\n**Tipo:** ${link?.type}\n**Escopo:** ${link?.scope}`;
+}
+
+export function formatExtractResult(fileName: string, result: ExtractResult): string {
+  const header = [`## ${fileName}`];
+  if (result.totalPages) {
+    header.push(`**Páginas:** ${result.pagesReturned} de ${result.totalPages}`);
+  }
+  header.push("");
+  header.push(result.text);
+  return header.join("\n");
 }

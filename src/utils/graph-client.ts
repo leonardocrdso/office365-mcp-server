@@ -53,6 +53,15 @@ export async function graphFetch<T>(
   return response.text() as unknown as T;
 }
 
+export async function graphFetchBinary(
+  accessToken: string,
+  url: string,
+  options: RequestInit = {}
+): Promise<Uint8Array> {
+  const response = await executeRequest(accessToken, url, options);
+  return new Uint8Array(await response.arrayBuffer());
+}
+
 export async function graphFetchVoid(
   accessToken: string,
   url: string,
