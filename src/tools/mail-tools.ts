@@ -8,6 +8,7 @@ import {
   formatEmailDetail,
   formatMailFolders,
 } from "../formatters/mail.js";
+import { DEFAULT_EMAIL_BODY_MAX_LENGTH } from "../constants.js";
 
 export function registerMailTools(server: McpServer, mail: MailService) {
   server.tool(
@@ -50,7 +51,7 @@ export function registerMailTools(server: McpServer, mail: MailService) {
     {
       messageId: z.string().describe("ID do email (aceita alias curto ex: m1)"),
       format: z.enum(["text", "html"]).optional().default("text").describe("Formato do corpo: 'text' (padrão, mais leve) ou 'html'"),
-      maxBodyLength: z.number().optional().describe("Truncar corpo após N caracteres (omitir = sem limite)"),
+      maxBodyLength: z.number().default(DEFAULT_EMAIL_BODY_MAX_LENGTH).describe("Truncar corpo após N caracteres (padrão: 4000; use 0 para sem limite)"),
     },
     safeTool(async (params) => {
       const email = await mail.readEmail(mail.resolveId(params.messageId), params.format);

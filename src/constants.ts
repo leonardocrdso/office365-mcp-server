@@ -5,6 +5,7 @@ export const DEFAULT_TIMEZONE = "America/Sao_Paulo";
 export const PREFER_TIMEZONE_HEADER = `outlook.timezone="${DEFAULT_TIMEZONE}"`;
 export const BODY_PREVIEW_MAX_LENGTH = 100;
 export const MESSAGE_CONTENT_MAX_LENGTH = 200;
+export const DEFAULT_EMAIL_BODY_MAX_LENGTH = 4000;
 
 export const SCOPES = {
   MAIL: ["Mail.Read", "Mail.Send", "Mail.ReadWrite"],

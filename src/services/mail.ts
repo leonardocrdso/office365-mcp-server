@@ -25,6 +25,11 @@ export interface SendEmailParams {
   contentType?: "Text" | "HTML";
 }
 
+function toGraphSearchPhrase(query: string): string {
+  const semAspas = query.replace(/"/g, " ").replace(/\s+/g, " ").trim();
+  return `"${semAspas}"`;
+}
+
 export function createMailService(auth: AuthProvider) {
   const getToken = createGetToken(auth, SCOPES.MAIL);
   const aliasToId = new Map<string, string>();
@@ -70,7 +75,7 @@ export function createMailService(auth: AuthProvider) {
   ): Promise<GraphEmailMessage[]> {
     const token = await getToken();
     const queryParams = new URLSearchParams({
-      $search: `"${query}"`,
+      $search: toGraphSearchPhrase(query),
       $top: String(top * 3),
       $select: "id,conversationId,subject,from,toRecipients,receivedDateTime,isRead,hasAttachments,bodyPreview",
     });
