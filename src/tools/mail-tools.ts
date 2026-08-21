@@ -8,7 +8,12 @@ import {
   formatEmailDetail,
   formatMailFolders,
 } from "../formatters/mail.js";
-import { DEFAULT_EMAIL_BODY_MAX_LENGTH } from "../constants.js";
+import { DEFAULT_EMAIL_BODY_MAX_LENGTH, MAX_EMAIL_BODY_MAX_LENGTH } from "../constants.js";
+
+function resolveBodyLimit(pedido: number): number {
+  if (!Number.isFinite(pedido) || pedido <= 0) return DEFAULT_EMAIL_BODY_MAX_LENGTH;
+  return Math.min(pedido, MAX_EMAIL_BODY_MAX_LENGTH);
+}
 
 export function registerMailTools(server: McpServer, mail: MailService) {
   server.tool(
@@ -51,12 +56,12 @@ export function registerMailTools(server: McpServer, mail: MailService) {
     {
       messageId: z.string().describe("ID do email (aceita alias curto ex: m1)"),
       format: z.enum(["text", "html"]).optional().default("text").describe("Formato do corpo: 'text' (padrão, mais leve) ou 'html'"),
-      maxBodyLength: z.number().default(DEFAULT_EMAIL_BODY_MAX_LENGTH).describe("Truncar corpo após N caracteres (padrão: 4000; use 0 para sem limite)"),
+      maxBodyLength: z.number().default(DEFAULT_EMAIL_BODY_MAX_LENGTH).describe("Truncar corpo após N caracteres (padrão: 4000, máximo: 12000)"),
     },
     safeTool(async (params) => {
       const email = await mail.readEmail(mail.resolveId(params.messageId), params.format);
       return {
-        content: [{ type: "text" as const, text: formatEmailDetail(email, params.maxBodyLength) }],
+        content: [{ type: "text" as const, text: formatEmailDetail(email, resolveBodyLimit(params.maxBodyLength)) }],
       };
     })
   );
