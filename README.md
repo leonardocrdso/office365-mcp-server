@@ -50,6 +50,7 @@ Add to your MCP client settings:
    - `Files.Read.All`, `Files.ReadWrite.All`
    - `Sites.Read.All`, `Sites.ReadWrite.All`
    - `Team.ReadBasic.All`, `Channel.ReadBasic.All`, `ChannelMessage.Send`
+   - `ChannelMessage.Read.All` — requires **admin consent**; without it, reading channel messages (and their files) returns 403
    - `Chat.Read`, `Chat.ReadWrite`
 5. Copy the **Application (client) ID** and use as `AZURE_CLIENT_ID`
 
