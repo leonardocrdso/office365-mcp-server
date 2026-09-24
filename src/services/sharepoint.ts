@@ -4,11 +4,27 @@ import type {
   GraphDrive,
   GraphDriveItem,
   GraphSearchResponse,
+  GraphSearchHit,
   GraphPagedResponse,
 } from "../types/graph.js";
 import { graphFetch } from "../utils/graph-client.js";
 import { SCOPES, DEFAULT_PAGE_SIZE_SMALL, DEFAULT_PAGE_SIZE_LARGE } from "../constants.js";
 import { createGetToken } from "../utils/auth-helper.js";
+import { flagName } from "../utils/flagged-paths.js";
+
+function flagSearchHit(hit: GraphSearchHit): GraphSearchHit {
+  const decodedUrl = hit.resource.webUrl ? decodeURIComponent(hit.resource.webUrl) : undefined;
+  return {
+    ...hit,
+    resource: {
+      ...hit.resource,
+      name: hit.resource.name ? flagName(hit.resource.name, decodedUrl) : hit.resource.name,
+      displayName: hit.resource.displayName
+        ? flagName(hit.resource.displayName, decodedUrl)
+        : hit.resource.displayName,
+    },
+  };
+}
 
 export interface ListLibraryItemsParams {
   driveId: string;
@@ -56,14 +72,17 @@ export function createSharePointService(auth: AuthProvider) {
 
     const queryParams = new URLSearchParams({
       $top: String(top),
-      $select: "id,name,size,lastModifiedDateTime,folder,file,webUrl",
+      $select: "id,name,size,lastModifiedDateTime,folder,file,webUrl,parentReference",
     });
 
     const result = await graphFetch<GraphPagedResponse<GraphDriveItem>>(
       token,
       `${basePath}?${queryParams}`
     );
-    return result.value;
+    return result.value.map((item) => ({
+      ...item,
+      name: flagName(item.name, item.parentReference?.path),
+    }));
   }
 
   async function searchSharePoint(query: string): Promise<GraphSearchResponse[]> {
@@ -85,7 +104,13 @@ export function createSharePointService(auth: AuthProvider) {
         }),
       }
     );
-    return result.value;
+    return result.value.map((response) => ({
+      ...response,
+      hitsContainers: response.hitsContainers.map((container) => ({
+        ...container,
+        hits: container.hits.map(flagSearchHit),
+      })),
+    }));
   }
 
   return { listSites, getSite, listDocumentLibraries, listLibraryItems, searchSharePoint };

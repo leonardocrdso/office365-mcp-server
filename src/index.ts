@@ -14,6 +14,7 @@ import { registerCalendarTools } from "./tools/calendar-tools.js";
 import { registerOneDriveTools } from "./tools/onedrive-tools.js";
 import { registerSharePointTools } from "./tools/sharepoint-tools.js";
 import { registerTeamsTools } from "./tools/teams-tools.js";
+import { startDownloadSweeper } from "./utils/download-store.js";
 
 const server = new McpServer({
   name: "office365-mcp-server",
@@ -32,6 +33,8 @@ registerCalendarTools(server, calendarService);
 registerOneDriveTools(server, oneDriveService);
 registerSharePointTools(server, sharePointService);
 registerTeamsTools(server, teamsService);
+
+startDownloadSweeper();
 
 const transport = new StdioServerTransport();
 await server.connect(transport);

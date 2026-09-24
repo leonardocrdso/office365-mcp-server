@@ -71,6 +71,7 @@ Add to your MCP client settings:
 | `list-emails` | List emails from Outlook (inbox or specific folder) |
 | `search-emails` | Search emails by KQL query |
 | `read-email` | Read full email content by ID |
+| `download-email-attachment` | Save email attachments to local disk (by name, or all non-inline) and return their paths |
 | `send-email` | Send a new email |
 | `reply-email` | Reply to an existing email |
 | `list-mail-folders` | List email folders |
@@ -91,6 +92,7 @@ Add to your MCP client settings:
 |------|-------------|
 | `list-drive-files` | List files and folders |
 | `read-file-content` | Read text file content |
+| `download-drive-file` | Save a OneDrive/SharePoint file to local disk and return its path |
 | `upload-file` | Upload a file (up to 4MB text) |
 | `search-files` | Search files by text |
 | `share-file` | Create a sharing link |
@@ -126,7 +128,7 @@ Add to your MCP client settings:
 
 ### Isolated storage (multi-agent)
 
-When `OFFICE365_MCP_HOME` is set, config and token cache are stored inside that directory (`config.json` and `tokens.json`). The directory is created automatically if it doesn't exist.
+When `OFFICE365_MCP_HOME` is set, config and token cache are stored inside that directory (`config.json` and `tokens.json`). The directory is created automatically if it doesn't exist. Downloaded files go to `downloads/` inside it (without it, to the system temp dir), one subfolder per download so the original file name is kept, capped at 100 MB per file and removed about an hour after download (swept at startup, every 15 minutes and before each new download).
 
 This allows running multiple isolated instances of the server — for example, one per agent in an orchestrator like OpenClaw — without auth leaking between them:
 

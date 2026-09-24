@@ -9,6 +9,9 @@ import {
   formatShareLink,
   formatExtractResult,
 } from "../formatters/onedrive.js";
+import { formatStoredDownloads } from "../formatters/download.js";
+import { formatSize } from "../utils/format.js";
+import { DOWNLOAD_MAX_BYTES } from "../constants.js";
 
 export function registerOneDriveTools(server: McpServer, onedrive: OneDriveService) {
   server.tool(
@@ -43,7 +46,7 @@ export function registerOneDriveTools(server: McpServer, onedrive: OneDriveServi
         maxPages: params.maxPages,
       });
       return {
-        content: [{ type: "text" as const, text: formatExtractResult(params.fileName, result) }],
+        content: [{ type: "text" as const, text: formatExtractResult(result.displayName, result) }],
       };
     })
   );
@@ -60,14 +63,13 @@ export function registerOneDriveTools(server: McpServer, onedrive: OneDriveServi
       maxPages: z.number().optional().describe("Máximo de páginas a extrair do PDF (omitir = todas)"),
     },
     safeTool(async (params) => {
-      const endpoint = onedrive.buildSharedContentEndpoint(params.driveId, params.itemId, params.path);
-      const result = await onedrive.readSharedFileContent(params.driveId, endpoint, {
-        fileName: params.fileName,
-        startPage: params.startPage,
-        maxPages: params.maxPages,
-      });
+      const result = await onedrive.readSharedFileContent(
+        params.driveId,
+        { itemId: params.itemId, path: params.path },
+        { fileName: params.fileName, startPage: params.startPage, maxPages: params.maxPages }
+      );
       return {
-        content: [{ type: "text" as const, text: formatExtractResult(params.fileName, result) }],
+        content: [{ type: "text" as const, text: formatExtractResult(result.displayName, result) }],
       };
     })
   );
@@ -88,9 +90,25 @@ export function registerOneDriveTools(server: McpServer, onedrive: OneDriveServi
         `**Item ID:** ${resolved.itemId}`,
       ];
       if (resolved.webUrl) lines.push(`**URL:** ${resolved.webUrl}`);
-      lines.push("", "Use estes IDs com `read-shared-file-content` para ler o conteúdo.");
+      lines.push("", "Use estes IDs com `read-shared-file-content` para ler o conteúdo ou com `download-drive-file` para baixar o arquivo.");
       return {
         content: [{ type: "text" as const, text: lines.join("\n") }],
+      };
+    })
+  );
+
+  server.tool(
+    "download-drive-file",
+    `Baixa um arquivo do OneDrive ou de um drive compartilhado (SharePoint) para o disco local e retorna o caminho, para anexar na resposta. Sem driveId, usa o OneDrive do usuário. Para link de compartilhamento, resolva antes com resolve-share-link. Limite: ${formatSize(DOWNLOAD_MAX_BYTES)} por arquivo.`,
+    {
+      itemId: z.string().optional().describe("ID do arquivo"),
+      driveId: z.string().optional().describe("ID do drive compartilhado (omitir = OneDrive do usuário)"),
+      path: z.string().optional().describe("Caminho do arquivo no drive (alternativa ao itemId)"),
+    },
+    safeTool(async (params) => {
+      const download = await onedrive.downloadDriveFile(params);
+      return {
+        content: [{ type: "text" as const, text: formatStoredDownloads([download]) }],
       };
     })
   );

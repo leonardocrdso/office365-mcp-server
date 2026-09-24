@@ -28,3 +28,7 @@ export const GRAPH_MIN_ATTEMPT_BUDGET_MS = 5_000;
 export const GRAPH_MAX_ATTEMPTS = 3;
 export const GRAPH_RETRY_BASE_DELAY_MS = 1_000;
 export const GRAPH_RETRY_MAX_DELAY_MS = 8_000;
+
+export const DOWNLOAD_MAX_BYTES = 100 * 1024 * 1024;
+export const DOWNLOAD_RETENTION_MS = 60 * 60 * 1000;
+export const DOWNLOAD_SWEEP_INTERVAL_MS = 15 * 60 * 1000;

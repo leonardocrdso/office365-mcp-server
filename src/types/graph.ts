@@ -14,6 +14,17 @@ export interface GraphAttachment {
   size: number;
 }
 
+export type GraphAttachmentKind =
+  | "#microsoft.graph.fileAttachment"
+  | "#microsoft.graph.itemAttachment"
+  | "#microsoft.graph.referenceAttachment";
+
+export interface GraphMessageAttachment extends GraphAttachment {
+  id: string;
+  isInline: boolean;
+  "@odata.type": GraphAttachmentKind;
+}
+
 export interface GraphEmailMessage {
   id: string;
   conversationId?: string;
