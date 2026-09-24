@@ -42,6 +42,19 @@ export function formatChannelMessages(messages: GraphChatMessage[]): string {
   return `## Mensagens do Canal (${formatted.length})\n\n${formatted.join("\n\n")}`;
 }
 
+export function formatChatMessages(messages: GraphChatMessage[]): string {
+  if (messages.length === 0) return "Nenhuma mensagem encontrada.";
+
+  const formatted = messages.map((m) => {
+    const from = messageSenderName(m);
+    const date = formatDateBR(m.createdDateTime);
+    const content = m.body?.content?.substring(0, MESSAGE_CONTENT_MAX_LENGTH) ?? "";
+    return `- **${from}** (${date})\n  ${content}`;
+  });
+
+  return `## Mensagens do Chat (${formatted.length})\n\n${formatted.join("\n\n")}`;
+}
+
 export function formatChatList(chats: GraphChat[]): string {
   if (chats.length === 0) return "Nenhum chat encontrado.";
 

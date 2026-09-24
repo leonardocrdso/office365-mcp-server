@@ -29,6 +29,11 @@ export interface SendChatMessageParams {
   contentType?: "text" | "html";
 }
 
+export interface ListChatMessagesParams {
+  chatId: string;
+  top?: number;
+}
+
 export function createTeamsService(auth: AuthProvider) {
   const getToken = createGetToken(auth, SCOPES.TEAMS);
 
@@ -84,7 +89,19 @@ export function createTeamsService(auth: AuthProvider) {
     const token = await getToken();
     const result = await graphFetch<GraphPagedResponse<GraphChat>>(
       token,
-      `/me/chats?$top=${top}&$select=id,topic,chatType,lastUpdatedDateTime&$expand=members($select=displayName,email)`
+      `/me/chats?$top=${top}&$select=id,topic,chatType,lastUpdatedDateTime&$expand=members`
+    );
+    return result.value;
+  }
+
+  async function listChatMessages(
+    params: ListChatMessagesParams
+  ): Promise<GraphChatMessage[]> {
+    const token = await getToken();
+    const { chatId, top = DEFAULT_PAGE_SIZE_LARGE } = params;
+    const result = await graphFetch<GraphPagedResponse<GraphChatMessage>>(
+      token,
+      `/me/chats/${chatId}/messages?$top=${top}`
     );
     return result.value;
   }
@@ -107,6 +124,7 @@ export function createTeamsService(auth: AuthProvider) {
     listChannelMessages,
     sendChannelMessage,
     listChats,
+    listChatMessages,
     sendChatMessage,
   };
 }

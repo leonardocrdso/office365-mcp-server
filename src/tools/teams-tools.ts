@@ -7,6 +7,7 @@ import {
   formatChannelList,
   formatChannelMessages,
   formatChatList,
+  formatChatMessages,
 } from "../formatters/teams.js";
 
 export function registerTeamsTools(server: McpServer, teams: TeamsService) {
@@ -81,6 +82,21 @@ export function registerTeamsTools(server: McpServer, teams: TeamsService) {
       const chats = await teams.listChats(params.top);
       return {
         content: [{ type: "text" as const, text: formatChatList(chats) }],
+      };
+    })
+  );
+
+  server.tool(
+    "list-chat-messages",
+    "Lista mensagens recentes de um chat/DM do Teams.",
+    {
+      chatId: z.string().describe("ID do chat"),
+      top: z.number().optional().describe("Número máximo de mensagens (padrão: 20)"),
+    },
+    safeTool(async (params) => {
+      const messages = await teams.listChatMessages(params);
+      return {
+        content: [{ type: "text" as const, text: formatChatMessages(messages) }],
       };
     })
   );
