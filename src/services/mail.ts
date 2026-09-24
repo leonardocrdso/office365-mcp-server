@@ -27,6 +27,12 @@ export interface SendEmailParams {
   contentType?: "Text" | "HTML";
 }
 
+const RECEIVED_DATE_TIME_LOWER_BOUND = "receivedDateTime ge 1900-01-01T00:00:00Z";
+
+export function buildOrderedMessageFilter(filter: string): string {
+  return `${RECEIVED_DATE_TIME_LOWER_BOUND} and (${filter.trim()})`;
+}
+
 function escapeKqlPhrase(text: string): string {
   return text.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
 }
@@ -67,7 +73,7 @@ export function createMailService(auth: AuthProvider) {
       $select: "id,subject,from,toRecipients,receivedDateTime,isRead,hasAttachments,bodyPreview",
       $orderby: "receivedDateTime desc",
     });
-    if (filter) queryParams.set("$filter", filter);
+    if (filter?.trim()) queryParams.set("$filter", buildOrderedMessageFilter(filter));
 
     const result = await graphFetch<GraphPagedResponse<GraphEmailMessage>>(
       token,

@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { DOWNLOAD_MAX_BYTES } from "../constants.js";
 import type { AuthProvider } from "../types/auth.js";
 import type { GraphMessageAttachment } from "../types/graph.js";
-import { createMailService } from "./mail.js";
+import { buildOrderedMessageFilter, createMailService } from "./mail.js";
 
 const fakeAuth: AuthProvider = {
   async getAccessToken() {
@@ -154,5 +154,45 @@ describe("downloadAttachments", () => {
 
     await expect(mail.downloadAttachments("msg-1")).rejects.toThrow();
     expect(requestedUrls.length).toBe(1);
+  });
+});
+
+describe("listEmails - $filter compatível com $orderby=receivedDateTime", () => {
+  const originalFetch = global.fetch;
+  let requestedUrl: string | undefined;
+
+  beforeEach(() => {
+    requestedUrl = undefined;
+    global.fetch = mock(async (input: RequestInfo | URL) => {
+      requestedUrl = input.toString();
+      return emptyMessagesPage();
+    }) as unknown as typeof fetch;
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+  function requestedParam(name: string): string | null {
+    return new URL(requestedUrl ?? "", "https://graph.microsoft.com").searchParams.get(name);
+  }
+
+  it("coloca receivedDateTime antes do filtro do usuário para evitar InefficientFilter", async () => {
+    await createMailService(fakeAuth).listEmails({ filter: "hasAttachments eq true" });
+
+    expect(requestedParam("$filter")).toBe("receivedDateTime ge 1900-01-01T00:00:00Z and (hasAttachments eq true)");
+    expect(requestedParam("$orderby")).toBe("receivedDateTime desc");
+  });
+
+  it("mantém a precedência de filtros com or entre parênteses", () => {
+    expect(buildOrderedMessageFilter(" isRead eq false or importance eq 'high' ")).toBe(
+      "receivedDateTime ge 1900-01-01T00:00:00Z and (isRead eq false or importance eq 'high')"
+    );
+  });
+
+  it("não envia $filter quando o filtro está vazio", async () => {
+    await createMailService(fakeAuth).listEmails({ filter: "  " });
+
+    expect(requestedParam("$filter")).toBeNull();
   });
 });
