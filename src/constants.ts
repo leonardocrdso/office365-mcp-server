@@ -21,3 +21,10 @@ export const SCOPES = {
     "Chat.ReadWrite",
   ],
 } as const;
+
+export const GRAPH_ATTEMPT_TIMEOUT_MS = 40_000;
+export const GRAPH_TOTAL_BUDGET_MS = 60_000;
+export const GRAPH_MIN_ATTEMPT_BUDGET_MS = 5_000;
+export const GRAPH_MAX_ATTEMPTS = 3;
+export const GRAPH_RETRY_BASE_DELAY_MS = 1_000;
+export const GRAPH_RETRY_MAX_DELAY_MS = 8_000;
