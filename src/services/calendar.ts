@@ -14,6 +14,8 @@ import {
   PREFER_TIMEZONE_HEADER,
 } from "../constants.js";
 import { createGetToken } from "../utils/auth-helper.js";
+import type { StoredDownload } from "../utils/download-store.js";
+import { downloadOutlookAttachments } from "../utils/outlook-attachments.js";
 
 export interface ListEventsParams {
   startDateTime: string;
@@ -61,7 +63,7 @@ export function createCalendarService(auth: AuthProvider) {
       endDateTime,
       $top: String(top),
       $select:
-        "id,subject,start,end,location,organizer,attendees,isOnlineMeeting,onlineMeetingUrl,bodyPreview",
+        "id,subject,start,end,location,organizer,attendees,isOnlineMeeting,onlineMeetingUrl,bodyPreview,hasAttachments",
       $orderby: "start/dateTime",
     });
 
@@ -167,7 +169,15 @@ export function createCalendarService(auth: AuthProvider) {
     });
   }
 
-  return { listEvents, createEvent, updateEvent, deleteEvent, findFreeSlots };
+  async function downloadEventAttachments(
+    eventId: string,
+    attachmentName?: string
+  ): Promise<StoredDownload[]> {
+    const token = await getToken();
+    return downloadOutlookAttachments(token, `/me/events/${eventId}/attachments`, attachmentName);
+  }
+
+  return { listEvents, createEvent, updateEvent, deleteEvent, findFreeSlots, downloadEventAttachments };
 }
 
 export type CalendarService = ReturnType<typeof createCalendarService>;

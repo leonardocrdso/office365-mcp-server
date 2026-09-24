@@ -7,6 +7,9 @@ import {
   formatCreatedEvent,
   formatFreeSlotsResult,
 } from "../formatters/calendar.js";
+import { formatStoredDownloads } from "../formatters/download.js";
+import { formatSize } from "../utils/format.js";
+import { DOWNLOAD_MAX_BYTES } from "../constants.js";
 
 export function registerCalendarTools(server: McpServer, calendar: CalendarService) {
   server.tool(
@@ -83,6 +86,21 @@ export function registerCalendarTools(server: McpServer, calendar: CalendarServi
         content: [
           { type: "text" as const, text: "Evento removido com sucesso." },
         ],
+      };
+    })
+  );
+
+  server.tool(
+    "download-event-attachment",
+    `Baixa anexos de um evento do calendário para o disco local e retorna o caminho de cada arquivo, para anexar na resposta. Sem attachmentName, baixa todos os anexos que não são imagens embutidas no corpo. Limite: ${formatSize(DOWNLOAD_MAX_BYTES)} por arquivo.`,
+    {
+      eventId: z.string().describe("ID do evento, como aparece em list-events"),
+      attachmentName: z.string().optional().describe("Nome ou parte do nome do anexo"),
+    },
+    safeTool(async (params) => {
+      const downloads = await calendar.downloadEventAttachments(params.eventId, params.attachmentName);
+      return {
+        content: [{ type: "text" as const, text: formatStoredDownloads(downloads) }],
       };
     })
   );

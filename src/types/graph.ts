@@ -66,6 +66,7 @@ export interface GraphEvent {
   onlineMeeting?: { joinUrl?: string };
   bodyPreview?: string;
   body?: { contentType: string; content: string };
+  hasAttachments?: boolean;
 }
 
 export interface GraphMeetingTimeSuggestion {
@@ -154,11 +155,19 @@ export interface GraphChannel {
   membershipType: string;
 }
 
+export interface GraphChatMessageAttachment {
+  id: string;
+  contentType: string;
+  contentUrl?: string;
+  name?: string;
+}
+
 export interface GraphChatMessage {
   id: string;
   createdDateTime: string;
   from?: { user?: { displayName?: string } };
   body?: { contentType: string; content: string };
+  attachments?: readonly GraphChatMessageAttachment[];
 }
 
 export interface GraphChat {

@@ -314,3 +314,57 @@ describe("downloadDriveFile", () => {
     expect(stored.path.endsWith("/caso.pdf")).toBe(true);
   });
 });
+
+describe("downloadSharedFile", () => {
+  const originalFetch = global.fetch;
+  let originalHome: string | undefined;
+  let tempHome: string;
+  let requestedUrls: string[];
+
+  beforeEach(async () => {
+    originalHome = process.env.OFFICE365_MCP_HOME;
+    tempHome = await mkdtemp(join(tmpdir(), "o365-test-"));
+    process.env.OFFICE365_MCP_HOME = tempHome;
+    requestedUrls = [];
+  });
+
+  afterEach(async () => {
+    global.fetch = originalFetch;
+    if (originalHome === undefined) delete process.env.OFFICE365_MCP_HOME;
+    else process.env.OFFICE365_MCP_HOME = originalHome;
+    await rm(tempHome, { recursive: true, force: true });
+  });
+
+  it("resolve o link via /shares e baixa o conteudo do item resolvido", async () => {
+    const shareUrl = "https://contoso.sharepoint.com/:w:/s/abc/xyz";
+    const conteudo = new Uint8Array([9, 9, 9]);
+
+    global.fetch = mock(async (input: RequestInfo | URL) => {
+      const url = input.toString();
+      requestedUrls.push(url);
+      if (url.includes("/shares/")) {
+        return jsonResponse({ id: "item-1", name: "contrato.pdf", parentReference: { driveId: "drive-1" } });
+      }
+      if (url.includes("$select=name,size,folder,parentReference")) {
+        return jsonResponse({ name: "contrato.pdf", size: conteudo.byteLength });
+      }
+      return new Response(conteudo, { status: 200, headers: { "content-type": "application/octet-stream" } });
+    }) as unknown as typeof fetch;
+
+    const onedrive = createOneDriveService(fakeAuth);
+    const stored = await onedrive.downloadSharedFile(shareUrl);
+
+    const expectedToken = Buffer.from(shareUrl, "utf-8")
+      .toString("base64")
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/, "");
+
+    expect(requestedUrls[0]).toContain(`/shares/u!${expectedToken}/driveItem`);
+    expect(requestedUrls[1]).toContain("/drives/drive-1/items/item-1");
+    expect(stored.fileName).toBe("contrato.pdf");
+
+    const written = await readFile(stored.path);
+    expect(new Uint8Array(written)).toEqual(conteudo);
+  });
+});

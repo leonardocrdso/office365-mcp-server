@@ -214,14 +214,17 @@ export function createOneDriveService(auth: AuthProvider) {
     return { ...stored, displayName: flagName(stored.fileName, item.parentReference?.path) };
   }
 
-  async function resolveShareLink(shareUrl: string): Promise<{ driveId: string; itemId: string; name: string; webUrl?: string }> {
-    const token = await getToken();
-    const encoded = Buffer.from(shareUrl, "utf-8")
+  function encodeShareToken(shareUrl: string): string {
+    return Buffer.from(shareUrl, "utf-8")
       .toString("base64")
       .replace(/\+/g, "-")
       .replace(/\//g, "_")
       .replace(/=+$/, "");
-    const shareToken = `u!${encoded}`;
+  }
+
+  async function resolveShareLink(shareUrl: string): Promise<{ driveId: string; itemId: string; name: string; webUrl?: string }> {
+    const token = await getToken();
+    const shareToken = `u!${encodeShareToken(shareUrl)}`;
 
     const item = await graphFetch<ShareDriveItemResponse>(
       token,
@@ -232,6 +235,11 @@ export function createOneDriveService(auth: AuthProvider) {
     if (!driveId) throw new Error("Não foi possível resolver o driveId do link compartilhado.");
 
     return { driveId, itemId: item.id, name: item.name, webUrl: item.webUrl };
+  }
+
+  async function downloadSharedFile(shareUrl: string): Promise<StoredDownload> {
+    const { driveId, itemId } = await resolveShareLink(shareUrl);
+    return downloadDriveFile({ driveId, itemId });
   }
 
   async function uploadFile(params: UploadFileParams): Promise<GraphDriveItem> {
@@ -278,7 +286,7 @@ export function createOneDriveService(auth: AuthProvider) {
 
   return {
     listFiles, readFileContent, readSharedFileContent, buildSharedContentEndpoint,
-    downloadDriveFile, resolveShareLink, uploadFile, searchFiles, shareFile,
+    downloadDriveFile, resolveShareLink, downloadSharedFile, uploadFile, searchFiles, shareFile,
   };
 }
 

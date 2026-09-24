@@ -84,7 +84,7 @@ function formatHit(hit: GraphSearchHit): string {
     if (driveId) {
       lines.push(`  **driveId:** ${driveId}`);
       lines.push(`  **itemId:** ${itemId}`);
-      lines.push(`  _Use driveId + itemId com read-shared-file-content para ler este arquivo._`);
+      lines.push(`  _Use driveId + itemId com read-shared-file-content para ler, ou com download-drive-file para baixar este arquivo._`);
     }
   } else if (typeName === "site") {
     const siteId = resource?.id;

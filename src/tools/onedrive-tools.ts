@@ -99,14 +99,17 @@ export function registerOneDriveTools(server: McpServer, onedrive: OneDriveServi
 
   server.tool(
     "download-drive-file",
-    `Baixa um arquivo do OneDrive ou de um drive compartilhado (SharePoint) para o disco local e retorna o caminho, para anexar na resposta. Sem driveId, usa o OneDrive do usuário. Para link de compartilhamento, resolva antes com resolve-share-link. Limite: ${formatSize(DOWNLOAD_MAX_BYTES)} por arquivo.`,
+    `Baixa um arquivo do OneDrive ou de um drive compartilhado (SharePoint) para o disco local e retorna o caminho, para anexar na resposta. Sem driveId, usa o OneDrive do usuário. Com shareUrl, resolve o link de compartilhamento direto e baixa o arquivo. Limite: ${formatSize(DOWNLOAD_MAX_BYTES)} por arquivo.`,
     {
       itemId: z.string().optional().describe("ID do arquivo"),
       driveId: z.string().optional().describe("ID do drive compartilhado (omitir = OneDrive do usuário)"),
       path: z.string().optional().describe("Caminho do arquivo no drive (alternativa ao itemId)"),
+      shareUrl: z.string().optional().describe("Link de compartilhamento ou URL do arquivo no OneDrive/SharePoint (alternativa a itemId/path)"),
     },
     safeTool(async (params) => {
-      const download = await onedrive.downloadDriveFile(params);
+      const download = params.shareUrl
+        ? await onedrive.downloadSharedFile(params.shareUrl)
+        : await onedrive.downloadDriveFile(params);
       return {
         content: [{ type: "text" as const, text: formatStoredDownloads([download]) }],
       };

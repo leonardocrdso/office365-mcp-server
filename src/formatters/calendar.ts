@@ -10,11 +10,12 @@ export function formatEventList(events: GraphEvent[]): string {
     const end = formatCalendarDate(e.end.dateTime);
     const location = e.location?.displayName ? ` @ ${e.location.displayName}` : "";
     const online = e.isOnlineMeeting ? " [Online]" : "";
+    const attachmentsFlag = e.hasAttachments ? " [Anexos]" : "";
     const attendees = e.attendees?.length
       ? `\n  Participantes: ${e.attendees.map((a) => recipientAddress(a)).join(", ")}`
       : "";
 
-    return `- **${e.subject}**${online}${location}\n  ${start} → ${end}${attendees}\n  ID: ${e.id}`;
+    return `- **${e.subject}**${online}${attachmentsFlag}${location}\n  ${start} → ${end}${attendees}\n  ID: ${e.id}`;
   });
 
   return `## Eventos (${formatted.length})\n\n${formatted.join("\n\n")}`;

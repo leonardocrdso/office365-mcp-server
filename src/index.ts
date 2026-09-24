@@ -25,7 +25,7 @@ const mailService = createMailService(msalClient);
 const calendarService = createCalendarService(msalClient);
 const oneDriveService = createOneDriveService(msalClient);
 const sharePointService = createSharePointService(msalClient);
-const teamsService = createTeamsService(msalClient);
+const teamsService = createTeamsService(msalClient, { downloadSharedFile: oneDriveService.downloadSharedFile });
 
 registerAuthTools(server, msalClient);
 registerMailTools(server, mailService);

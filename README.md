@@ -85,6 +85,7 @@ Add to your MCP client settings:
 | `update-event` | Update an existing event |
 | `delete-event` | Delete an event |
 | `find-free-slots` | Check availability for meeting attendees |
+| `download-event-attachment` | Save event attachments to local disk (by name, or all non-inline) and return their paths |
 
 ### OneDrive
 
@@ -92,7 +93,7 @@ Add to your MCP client settings:
 |------|-------------|
 | `list-drive-files` | List files and folders |
 | `read-file-content` | Read text file content |
-| `download-drive-file` | Save a OneDrive/SharePoint file to local disk and return its path |
+| `download-drive-file` | Save a OneDrive/SharePoint file (by ID, path or sharing link) to local disk and return its path |
 | `upload-file` | Upload a file (up to 4MB text) |
 | `search-files` | Search files by text |
 | `share-file` | Create a sharing link |
@@ -114,9 +115,12 @@ Add to your MCP client settings:
 | `list-teams` | List joined teams |
 | `list-channels` | List team channels |
 | `list-channel-messages` | List channel messages |
+| `list-channel-message-replies` | List replies in a channel message thread |
 | `send-channel-message` | Send a channel message |
 | `list-chats` | List direct chats |
+| `list-chat-messages` | List chat messages |
 | `send-chat-message` | Send a chat message |
+| `download-teams-message-files` | Save files and inline images from a chat message, channel message or thread reply to local disk and return their paths |
 
 ## Environment Variables
 
@@ -125,6 +129,7 @@ Add to your MCP client settings:
 | `AZURE_CLIENT_ID` | Yes | — | App registration client ID |
 | `AZURE_TENANT_ID` | No | `common` | Tenant ID or `common` for multi-tenant |
 | `OFFICE365_MCP_HOME` | No | `~/` | Directory for isolated config and token storage |
+| `OFFICE365_MCP_FLAG_PATH_MARKERS` | No | — | Comma-separated path markers; matching OneDrive/SharePoint items get a warning prefix in their name |
 
 ### Isolated storage (multi-agent)
 
